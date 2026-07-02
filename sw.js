@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gzb-classwake-pages-v7';
+const CACHE_NAME = 'gzb-classwake-pages-v8';
 const ASSETS = [
   './',
   './index.html',

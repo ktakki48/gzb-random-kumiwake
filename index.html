@@ -79,26 +79,30 @@
       margin-bottom: var(--card-gap);
     }
 
-    .toolbar {
+    .toolbar,
+    .sub-toolbar {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
     }
 
     .sub-toolbar {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
       margin-top: 10px;
     }
 
-    .sub-toolbar button,
-    .sub-toolbar .file-label {
+    .toolbar > button,
+    .sub-toolbar > button,
+    .sub-toolbar > .file-label {
       width: 100%;
-      padding: 12px 14px;
-      font-size: 15px;
-      min-height: 44px;
-      border-radius: 12px;
+      min-height: 54px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.2;
+    }
+
+    #clearAllBtn {
+      grid-column: 1 / -1;
     }
 
     button, .file-label {
@@ -129,6 +133,14 @@
       font-size: 13px;
       min-height: 36px;
       border-radius: 10px;
+    }
+
+    .sub-toolbar button.small,
+    .sub-toolbar .file-label.small {
+      padding: 12px 14px;
+      font-size: 15px;
+      min-height: 54px;
+      border-radius: 12px;
     }
     button:disabled {
       opacity: .45;
@@ -389,6 +401,7 @@
 
     @media (min-width: 720px) {
       .toolbar, .sub-toolbar { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      #clearAllBtn { grid-column: 1 / -1; }
       .group-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .member-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
@@ -411,7 +424,7 @@
   </header>
 
   <main>
-    <section class="panel" aria-label="操作">
+    <section class="panel action-panel" aria-label="操作">
       <p class="notice"><strong>使い方</strong><span>名簿を編集 → 保存 → 「全グループ作成」。4〜6名は1組、8〜12名はできるだけ均等な2組に分けます。<br>1〜3名と7名は人数エラーになります。</span></p>
       <div class="toolbar">
         <button id="saveBtn" type="button">名簿を保存</button>
