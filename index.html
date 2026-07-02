@@ -1,0 +1,946 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f5307b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="GZBクラス別け" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./icons/favicon-16.png" />
+  <link rel="shortcut icon" href="./favicon.ico" />
+  <title>GZB ランダム組み分け</title>
+  <style>
+    :root {
+      --bg: #f6f7f4;
+      --card: #ffffff;
+      --ink: #18201e;
+      --muted: #62706b;
+      --line: #d9e1dc;
+      --primary: #146c5f;
+      --primary-2: #0f574d;
+      --accent: #f2b84b;
+      --danger: #b3261e;
+      --soft: #e9f4f1;
+      --shadow: 0 10px 28px rgba(16, 24, 20, .08);
+      --radius: 18px;
+      --card-gap: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: linear-gradient(180deg, #eff7f4 0%, var(--bg) 220px);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+      line-height: 1.55;
+    }
+
+    header {
+      padding: max(18px, env(safe-area-inset-top)) 16px 14px;
+      background: linear-gradient(135deg, #146c5f, #0d4d45);
+      color: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(22px, 5vw, 34px);
+      letter-spacing: .02em;
+    }
+
+    .lead {
+      margin: 8px 0 0;
+      color: rgba(255, 255, 255, .88);
+      font-size: 14px;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 18px 14px 80px;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: var(--card-gap);
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .sub-toolbar {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .sub-toolbar button,
+    .sub-toolbar .file-label {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 15px;
+      min-height: 44px;
+      border-radius: 12px;
+    }
+
+    button, .file-label {
+      appearance: none;
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      background: var(--primary);
+      cursor: pointer;
+      touch-action: manipulation;
+      text-align: center;
+      min-height: 44px;
+    }
+
+    button:active, .file-label:active { transform: translateY(1px); }
+    button.secondary, .file-label.secondary {
+      background: #eef5f2;
+      color: var(--primary-2);
+      border: 1px solid #c8dbd5;
+    }
+    button.warning { background: #7a4b00; }
+    button.danger { background: var(--danger); }
+    button.small {
+      padding: 8px 10px;
+      font-size: 13px;
+      min-height: 36px;
+      border-radius: 10px;
+    }
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .notice {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 12px;
+      background: var(--soft);
+      border: 1px solid #cce5dd;
+      border-radius: 14px;
+      color: #224c45;
+      font-size: 13px;
+      margin: 0 0 12px;
+    }
+    .notice strong { white-space: nowrap; }
+
+    .group-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--card-gap);
+      margin-bottom: var(--card-gap);
+    }
+
+    .group-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .group-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 14px 10px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfdfc;
+    }
+
+    .group-title-wrap { min-width: 0; }
+    .group-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      font-size: 18px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      height: 24px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--primary-2);
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .group-meta {
+      margin: 3px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .name-list {
+      padding: 12px 14px 14px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .name-row {
+      display: grid;
+      grid-template-columns: 32px 1fr 36px;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .num {
+      color: var(--muted);
+      font-size: 13px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font: inherit;
+      min-height: 42px;
+      background: #fff;
+    }
+    input[type="text"]:focus {
+      outline: 3px solid rgba(20, 108, 95, .16);
+      border-color: var(--primary);
+    }
+
+    .clear-btn {
+      background: #f2f3f1;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      font-weight: 900;
+      padding: 0;
+      min-height: 38px;
+      width: 36px;
+    }
+
+    .result-area {
+      display: grid;
+      gap: var(--card-gap);
+    }
+
+    .result-head {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .result-title {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .result-date {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .result-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .result-group-head {
+      padding: 12px 14px;
+      background: #f7fbf9;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: baseline;
+    }
+
+    .result-group-head h3 {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    .count-text {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .blocks {
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .block {
+      border: 1px dashed #c7d7d2;
+      border-radius: 14px;
+      padding: 10px;
+      background: #fcfefd;
+    }
+
+    .block-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--primary-2);
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .member-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .member {
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: #f1f5f3;
+      font-weight: 700;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .remainder .block-title { color: #8a5a00; }
+    .remainder .member { background: #fff6df; }
+    .empty-result {
+      padding: 16px;
+      color: var(--muted);
+      text-align: center;
+      border: 1px dashed var(--line);
+      border-radius: 16px;
+      background: #fff;
+    }
+
+    .error-result {
+      color: var(--danger);
+      border-color: rgba(179, 38, 30, .35);
+      background: #fff7f6;
+      font-weight: 800;
+    }
+
+    .status {
+      min-height: 22px;
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 10px;
+    }
+    .status.ok { color: var(--primary-2); font-weight: 700; }
+    .status.error { color: var(--danger); font-weight: 700; }
+
+    details {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px 14px;
+    }
+    summary {
+      cursor: pointer;
+      font-weight: 800;
+      color: var(--primary-2);
+    }
+    .help-list {
+      margin: 10px 0 0;
+      padding-left: 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    #importFile { display: none; }
+
+    @media (min-width: 720px) {
+      .toolbar, .sub-toolbar { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .group-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .member-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
+    @media print {
+      header, .toolbar, .sub-toolbar, details, .group-grid, .notice { display: none !important; }
+      body { background: #fff; }
+      main { padding: 0; }
+      .panel { box-shadow: none; border: 0; }
+      .result-card, .block { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <h1>GZB ランダム組み分け</h1>
+      <p class="lead">A / B1 / B2 / C の各グループから、最大6名を目安に均等な組をランダム作成します。<br>名簿はこの端末のブラウザ内に保存されます。</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel" aria-label="操作">
+      <p class="notice"><strong>使い方</strong><span>名簿を編集 → 保存 → 「全グループ作成」。4〜6名は1組、8〜12名はできるだけ均等な2組に分けます。<br>1〜3名と7名は人数エラーになります。</span></p>
+      <div class="toolbar">
+        <button id="saveBtn" type="button">名簿を保存</button>
+        <button id="shuffleAllBtn" type="button">全グループ作成</button>
+        <button id="copyBtn" type="button" class="secondary">結果をコピー</button>
+        <button id="printBtn" type="button" class="secondary">印刷/PDF</button>
+      </div>
+      <div class="sub-toolbar">
+        <button id="exportBtn" type="button" class="small secondary">名簿バックアップ</button>
+        <label class="file-label small secondary" for="importFile">名簿を復元</label>
+        <input id="importFile" type="file" accept="application/json,.json" />
+        <button id="clearAllBtn" type="button" class="small danger">全名簿クリア</button>
+      </div>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+    </section>
+
+    <section class="group-grid" id="groupGrid" aria-label="グループ別名簿"></section>
+
+    <section class="panel" aria-label="組分け結果">
+      <div class="result-head">
+        <h2 class="result-title">組分け結果</h2>
+        <div id="resultDate" class="result-date">未作成</div>
+      </div>
+      <div id="resultArea" class="result-area">
+        <div class="empty-result">まだ結果がありません。「全グループ作成」を押してください。</div>
+      </div>
+    </section>
+
+    <details>
+      <summary>iPhoneでアプリのように使う場合</summary>
+      <ul class="help-list">
+        <li>GitHub Pagesで公開したURLをiPhoneのSafariで開きます。</li>
+        <li>共有ボタン → 「ホーム画面に追加」を選ぶと、アプリ風に起動できます。</li>
+        <li>名簿保存はlocalStorageを使用します。同じ端末・同じブラウザ・同じURLで保持されます。</li>
+        <li>機種変更やURL変更に備える場合は「名簿バックアップ」でバックアップしてください。</li>
+      </ul>
+    </details>
+  </main>
+
+  <script>
+    'use strict';
+
+    const STORAGE_KEY = 'badminton-six-person-groups-v1';
+    const MAX_MEMBERS = 12;
+    const GROUP_NAMES = ['Aグループ', 'B1グループ', 'B2グループ', 'Cグループ'];
+    const DEFAULT_GROUPS = {
+      'Aグループ': ['宇津', '福田', '川嶋', '湯澤', '大野'],
+      'B1グループ': ['竿田', '加藤', '宇都', '瀧本', '三島', '篠原', '山本', '曹磊', '利君', 'モモ', '川尻'],
+      'B2グループ': ['名和', '杉元', '髙木', '南', '湯浅', '京野', '三橋', 'エリ', '源内', '小池', 'ニノ'],
+      'Cグループ': ['星野', '高橋さ', '中村', '立島', '李', '石丸', '林', '莉莉', 'mackey', '娟', '吴', '三尾']
+    };
+
+    const state = {
+      groups: normalizeGroups(loadGroups()),
+      lastResultText: ''
+    };
+
+    const els = {
+      groupGrid: document.getElementById('groupGrid'),
+      resultArea: document.getElementById('resultArea'),
+      resultDate: document.getElementById('resultDate'),
+      status: document.getElementById('status'),
+      saveBtn: document.getElementById('saveBtn'),
+      shuffleAllBtn: document.getElementById('shuffleAllBtn'),
+      copyBtn: document.getElementById('copyBtn'),
+      printBtn: document.getElementById('printBtn'),
+      exportBtn: document.getElementById('exportBtn'),
+      importFile: document.getElementById('importFile'),
+      clearAllBtn: document.getElementById('clearAllBtn')
+    };
+
+    renderGroups();
+    bindEvents();
+    registerServiceWorker();
+
+    function bindEvents() {
+      els.saveBtn.addEventListener('click', () => {
+        readInputsToState();
+        saveGroups(state.groups);
+        showStatus('名簿を保存しました。', 'ok');
+        renderGroups();
+      });
+
+      els.shuffleAllBtn.addEventListener('click', () => {
+        readInputsToState();
+        saveGroups(state.groups);
+        generateAllGroups();
+      });
+
+      els.copyBtn.addEventListener('click', copyResult);
+      els.printBtn.addEventListener('click', () => window.print());
+      els.exportBtn.addEventListener('click', exportJson);
+      els.importFile.addEventListener('change', importJson);
+
+      els.clearAllBtn.addEventListener('click', () => {
+        const ok = window.confirm('全グループの名簿を空にします。');
+        if (!ok) return;
+        state.groups = emptyGroups();
+        saveGroups(state.groups);
+        renderGroups();
+        clearResult();
+        showStatus('全名簿をクリアしました。', 'ok');
+      });
+    }
+
+    function emptyGroups() {
+      return Object.fromEntries(GROUP_NAMES.map(name => [name, []]));
+    }
+
+    function normalizeGroups(input) {
+      const source = input && typeof input === 'object' ? input : DEFAULT_GROUPS;
+      const normalized = {};
+      for (const groupName of GROUP_NAMES) {
+        const raw = Array.isArray(source[groupName]) ? source[groupName] : [];
+        normalized[groupName] = raw
+          .map(v => String(v ?? '').trim())
+          .filter(Boolean)
+          .slice(0, MAX_MEMBERS);
+      }
+      return normalized;
+    }
+
+    function loadGroups() {
+      try {
+        const saved = window.localStorage.getItem(STORAGE_KEY);
+        if (!saved) return DEFAULT_GROUPS;
+        const parsed = JSON.parse(saved);
+        return parsed.groups || parsed;
+      } catch (e) {
+        console.warn(e);
+        return DEFAULT_GROUPS;
+      }
+    }
+
+    function saveGroups(groups) {
+      const payload = {
+        version: 1,
+        savedAt: new Date().toISOString(),
+        groups: normalizeGroups(groups)
+      };
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    }
+
+    function renderGroups() {
+      els.groupGrid.innerHTML = '';
+      for (const groupName of GROUP_NAMES) {
+        const card = document.createElement('section');
+        card.className = 'group-card';
+        card.dataset.group = groupName;
+
+        const head = document.createElement('div');
+        head.className = 'group-head';
+
+        const titleWrap = document.createElement('div');
+        titleWrap.className = 'group-title-wrap';
+
+        const h2 = document.createElement('h2');
+        h2.className = 'group-title';
+        const titleText = document.createElement('span');
+        titleText.textContent = groupName;
+        const badge = document.createElement('span');
+        badge.className = 'badge';
+        badge.textContent = `${state.groups[groupName].length}/${MAX_MEMBERS}`;
+        h2.append(titleText, badge);
+
+        const meta = document.createElement('p');
+        meta.className = 'group-meta';
+        meta.textContent = '最大6名目安で均等作成';
+        titleWrap.append(h2, meta);
+
+        const oneBtn = document.createElement('button');
+        oneBtn.className = 'small secondary';
+        oneBtn.type = 'button';
+        oneBtn.textContent = 'この組だけ';
+        oneBtn.addEventListener('click', () => {
+          readInputsToState();
+          saveGroups(state.groups);
+          generateSelectedGroups([groupName]);
+        });
+
+        head.append(titleWrap, oneBtn);
+
+        const list = document.createElement('div');
+        list.className = 'name-list';
+        for (let i = 0; i < MAX_MEMBERS; i++) {
+          const row = document.createElement('div');
+          row.className = 'name-row';
+
+          const num = document.createElement('div');
+          num.className = 'num';
+          num.textContent = String(i + 1).padStart(2, '0');
+
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.inputMode = 'text';
+          input.autocomplete = 'off';
+          input.placeholder = '名前';
+          input.value = state.groups[groupName][i] || '';
+          input.dataset.group = groupName;
+          input.dataset.index = String(i);
+          input.addEventListener('change', () => {
+            readInputsToState();
+            saveGroups(state.groups);
+            renderGroupBadgesOnly();
+            showStatus('自動保存しました。', 'ok', 1400);
+          });
+
+          const clearBtn = document.createElement('button');
+          clearBtn.className = 'clear-btn';
+          clearBtn.type = 'button';
+          clearBtn.title = 'この欄をクリア';
+          clearBtn.textContent = '×';
+          clearBtn.addEventListener('click', () => {
+            input.value = '';
+            readInputsToState();
+            saveGroups(state.groups);
+            renderGroupBadgesOnly();
+            input.focus();
+          });
+
+          row.append(num, input, clearBtn);
+          list.appendChild(row);
+        }
+
+        card.append(head, list);
+        els.groupGrid.appendChild(card);
+      }
+    }
+
+    function renderGroupBadgesOnly() {
+      for (const groupName of GROUP_NAMES) {
+        const card = els.groupGrid.querySelector(`[data-group="${cssEscape(groupName)}"]`);
+        const badge = card?.querySelector('.badge');
+        if (badge) badge.textContent = `${state.groups[groupName].length}/${MAX_MEMBERS}`;
+      }
+    }
+
+    function cssEscape(value) {
+      if (window.CSS && typeof window.CSS.escape === 'function') return window.CSS.escape(value);
+      return String(value).replace(/"/g, '\\"');
+    }
+
+    function readInputsToState() {
+      const next = emptyGroups();
+      const inputs = els.groupGrid.querySelectorAll('input[type="text"]');
+      inputs.forEach(input => {
+        const groupName = input.dataset.group;
+        const value = input.value.trim();
+        if (GROUP_NAMES.includes(groupName) && value) {
+          next[groupName].push(value);
+        }
+      });
+      state.groups = normalizeGroups(next);
+    }
+
+    function generateAllGroups() {
+      generateSelectedGroups(GROUP_NAMES);
+    }
+
+    function generateSelectedGroups(groupNames) {
+      const createdAt = new Date();
+      const results = groupNames.map(groupName => makeGroupResult(groupName, state.groups[groupName] || []));
+      renderResults(results, createdAt);
+      state.lastResultText = buildResultText(results, createdAt);
+      const hasError = results.some(result => result.error);
+      showStatus(hasError ? '一部グループで人数エラーがあります。' : '組分けを作成しました。', hasError ? 'error' : 'ok');
+    }
+
+    function makeGroupResult(groupName, members) {
+      const clean = members.map(v => String(v ?? '').trim()).filter(Boolean).slice(0, MAX_MEMBERS);
+      const total = clean.length;
+      const shuffled = shuffle(clean);
+      const blocks = [];
+      let error = '';
+
+      if (total === 0) {
+        // 登録なし
+      } else if (total >= 1 && total <= 3) {
+        error = '4名以上で構成して下さい。';
+      } else if (total <= 6) {
+        blocks.push(shuffled.splice(0, total));
+      } else if (total === 7) {
+        error = '8名以上で構成して下さい。';
+      } else {
+        const groupCount = Math.ceil(total / 6);
+        const baseSize = Math.floor(total / groupCount);
+        const extra = total % groupCount;
+
+        for (let i = 0; i < groupCount; i++) {
+          const size = baseSize + (i < extra ? 1 : 0);
+          blocks.push(shuffled.splice(0, size));
+        }
+      }
+
+      return {
+        groupName,
+        total,
+        blocks,
+        error
+      };
+    }
+
+    function shuffle(values) {
+      const arr = [...values];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = secureRandomInt(i + 1);
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function secureRandomInt(maxExclusive) {
+      if (maxExclusive <= 1) return 0;
+      if (window.crypto && window.crypto.getRandomValues) {
+        const array = new Uint32Array(1);
+        const limit = Math.floor(0x100000000 / maxExclusive) * maxExclusive;
+        let randomValue;
+        do {
+          window.crypto.getRandomValues(array);
+          randomValue = array[0];
+        } while (randomValue >= limit);
+        return randomValue % maxExclusive;
+      }
+      return Math.floor(Math.random() * maxExclusive);
+    }
+
+    function renderResults(results, createdAt) {
+      els.resultArea.innerHTML = '';
+      els.resultDate.textContent = formatDateTime(createdAt);
+
+      if (!results.length) {
+        clearResult();
+        return;
+      }
+
+      for (const result of results) {
+        const card = document.createElement('section');
+        card.className = 'result-card';
+
+        const head = document.createElement('div');
+        head.className = 'result-group-head';
+        const h3 = document.createElement('h3');
+        h3.textContent = result.groupName;
+        const count = document.createElement('div');
+        count.className = 'count-text';
+        count.textContent = result.error ? `${result.total}名 / 人数エラー` : `${result.total}名 / ${formatBlockSummary(result.blocks)}`;
+        head.append(h3, count);
+
+        const blocks = document.createElement('div');
+        blocks.className = 'blocks';
+
+        if (result.error) {
+          const error = document.createElement('div');
+          error.className = 'empty-result error-result';
+          error.textContent = result.error;
+          blocks.appendChild(error);
+        } else if (result.blocks.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'empty-result';
+          empty.textContent = '登録メンバーがいません。';
+          blocks.appendChild(empty);
+        }
+
+        result.blocks.forEach((members, idx) => {
+          blocks.appendChild(createMemberBlock(`第${idx + 1}組（${members.length}名）`, members, false));
+        });
+
+        card.append(head, blocks);
+        els.resultArea.appendChild(card);
+      }
+    }
+
+    function formatBlockSummary(blocks) {
+      if (!blocks.length) return '未作成';
+      return blocks.map(members => `${members.length}名`).join(' + ');
+    }
+
+    function createMemberBlock(title, members, isRemainder) {
+      const block = document.createElement('div');
+      block.className = `block${isRemainder ? ' remainder' : ''}`;
+
+      const titleEl = document.createElement('div');
+      titleEl.className = 'block-title';
+      titleEl.textContent = title;
+
+      const list = document.createElement('ol');
+      list.className = 'member-list';
+      members.forEach(member => {
+        const li = document.createElement('li');
+        li.className = 'member';
+        li.textContent = member;
+        list.appendChild(li);
+      });
+
+      block.append(titleEl, list);
+      return block;
+    }
+
+    function buildResultText(results, createdAt) {
+      const lines = [];
+      lines.push(`バドミントン ランダム組分け（${formatDateTime(createdAt)}）`);
+      for (const result of results) {
+        lines.push('');
+        lines.push(`【${result.groupName}】${result.total}名`);
+        if (result.error) {
+          lines.push(`エラー：${result.error}`);
+          continue;
+        }
+        if (result.blocks.length === 0) {
+          lines.push('登録メンバーなし');
+        }
+        result.blocks.forEach((members, idx) => {
+          lines.push(`第${idx + 1}組（${members.length}名）：${members.join('、')}`);
+        });
+      }
+      return lines.join('\n');
+    }
+
+    async function copyResult() {
+      if (!state.lastResultText) {
+        showStatus('コピーできる結果がまだありません。先に組分けを作成してください。', 'error');
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(state.lastResultText);
+        showStatus('結果をコピーしました。LINEやメモに貼り付けできます。', 'ok');
+      } catch (e) {
+        fallbackCopy(state.lastResultText);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(textarea);
+      showStatus(ok ? '結果をコピーしました。' : 'コピーに失敗しました。', ok ? 'ok' : 'error');
+    }
+
+    function exportJson() {
+      readInputsToState();
+      saveGroups(state.groups);
+      const payload = {
+        app: 'badminton-six-person-groups',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        groups: normalizeGroups(state.groups)
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `badminton-members-${dateStamp(new Date())}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showStatus('名簿JSONを書き出しました。', 'ok');
+    }
+
+    function importJson(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(String(reader.result || '{}'));
+          const groups = parsed.groups || parsed;
+          state.groups = normalizeGroups(groups);
+          saveGroups(state.groups);
+          renderGroups();
+          clearResult();
+          showStatus('名簿JSONを取り込みました。', 'ok');
+        } catch (e) {
+          showStatus('JSONの読み込みに失敗しました。', 'error');
+        } finally {
+          event.target.value = '';
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function clearResult() {
+      state.lastResultText = '';
+      els.resultDate.textContent = '未作成';
+      els.resultArea.innerHTML = '<div class="empty-result">まだ結果がありません。「全グループ作成」を押してください。</div>';
+    }
+
+    function showStatus(message, type = '', timeout = 2600) {
+      els.status.textContent = message;
+      els.status.className = `status ${type}`.trim();
+      if (timeout) {
+        window.clearTimeout(showStatus.timer);
+        showStatus.timer = window.setTimeout(() => {
+          els.status.textContent = '';
+          els.status.className = 'status';
+        }, timeout);
+      }
+    }
+
+    function formatDateTime(date) {
+      return new Intl.DateTimeFormat('ja-JP', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit',
+        hour12: false
+      }).format(date);
+    }
+
+    function dateStamp(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      const h = String(date.getHours()).padStart(2, '0');
+      const min = String(date.getMinutes()).padStart(2, '0');
+      return `${y}${m}${d}-${h}${min}`;
+    }
+
+    function registerServiceWorker() {
+      if (!('serviceWorker' in navigator)) return;
+      if (!/^https?:$/.test(window.location.protocol)) return;
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.warn('Service Worker registration failed', err));
+      });
+    }
+  </script>
+</body>
+</html>

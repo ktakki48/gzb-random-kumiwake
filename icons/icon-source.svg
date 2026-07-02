@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff4d94"/>
+      <stop offset="100%" stop-color="#f5307b"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#g)"/>
+  <text x="512" y="560" text-anchor="middle" font-family="Arial Black, Helvetica Neue, Helvetica, Arial, sans-serif" font-size="350" font-weight="900" letter-spacing="-12" fill="#ffffff">GZB</text>
+</svg>
