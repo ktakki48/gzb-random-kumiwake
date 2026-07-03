@@ -338,11 +338,10 @@
       padding: 12px 14px;
       background: #f7fbf9;
       border-bottom: 1px solid var(--line);
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
       gap: 10px;
       align-items: center;
-      flex-wrap: wrap;
     }
     .result-group-head h3 {
       margin: 0;
@@ -355,8 +354,15 @@
     }
     .result-actions {
       display: flex;
+      justify-content: flex-end;
+      align-items: center;
       gap: 8px;
-      flex-wrap: wrap;
+      min-width: max-content;
+    }
+    .result-actions button {
+      width: auto;
+      min-width: 88px;
+      white-space: nowrap;
     }
 
     .schedule-grid {
@@ -473,6 +479,7 @@
     .image-output-head span {
       color: var(--muted);
       font-size: 12px;
+      text-align: right;
     }
     .image-output-grid {
       display: grid;
@@ -632,7 +639,7 @@
         <li>4〜6名、8〜12名で対戦表を作成し、1〜3名と7名はエラー表示にします。</li>
         <li>4〜6名は1コート、8〜12名は2コートで運用し、余り人数は毎試合「休憩」として自動で割り振ります。</li>
         <li>同じペアや似た対戦が連続しにくいよう、偏りを抑えるロジックで作成します。</li>
-        <li>上部の「結果の画像出力」から4クラス分の画像を順番に表示できます。各グループ結果カードの「画像出力」から個別保存もできます。</li>
+        <li>上部の「結果の画像出力」からA・B1・B2・Cを1枚にまとめたセット画像を共有できます。各グループ結果カードの「画像出力」から個別共有もできます。共有シート非対応環境では保存用表示に切り替わります。</li>
         <li>名簿は入力中に即時自動保存されます。名簿と前回作成した対戦表はlocalStorageを使用し、同じ端末・同じブラウザ・同じURLで保持されます。</li>
       </ul>
     </details>
@@ -1269,10 +1276,7 @@
 
     function renderResults(results, createdAt) {
       els.resultArea.innerHTML = '';
-      if (els.imageOutputArea) {
-        els.imageOutputArea.hidden = true;
-        els.imageOutputArea.innerHTML = '';
-      }
+      hideImageOutputArea();
       els.resultDate.textContent = formatDateTime(createdAt);
 
       if (!results.length) {
@@ -1558,10 +1562,7 @@
       if (removeSaved) clearSavedResult();
       els.resultDate.textContent = '未作成';
       els.resultArea.innerHTML = '<div class="empty-result">まだ結果がありません。「全対戦表作成」を押してください。</div>';
-      if (els.imageOutputArea) {
-        els.imageOutputArea.hidden = true;
-        els.imageOutputArea.innerHTML = '';
-      }
+      hideImageOutputArea();
     }
 
     function showStatus(message, type = '', timeout = 2600) {
@@ -1618,47 +1619,80 @@
         return;
       }
 
+      showStatus('4クラスセット画像を作成しています。', 'ok', 2200);
+
+      try {
+        const fileName = `GZB-全クラス対戦表-${dateStamp(state.lastCreatedAt)}.png`;
+        const blob = await createCombinedScheduleImageBlob(targets, state.lastCreatedAt);
+        const shared = await tryShareImageBlob(blob, fileName, 'GZB クラス別 ランダム対戦表');
+
+        if (shared) {
+          hideImageOutputArea();
+          showStatus('共有シートを開きました。', 'ok');
+          return;
+        }
+
+        presentCombinedImageFallback(blob, fileName);
+        showStatus('この環境では共有シートを使えないため、保存用画像を表示しました。', 'ok');
+      } catch (e) {
+        if (e && e.name === 'AbortError') {
+          showStatus('共有をキャンセルしました。', 'ok');
+          return;
+        }
+        console.warn(e);
+        showStatus('セット画像の作成に失敗しました。', 'error');
+      }
+    }
+
+    function presentCombinedImageFallback(blob, fileName) {
+      const url = URL.createObjectURL(blob);
+
       els.imageOutputArea.hidden = false;
       els.imageOutputArea.innerHTML = '';
 
       const head = document.createElement('div');
       head.className = 'image-output-head';
+
       const title = document.createElement('h3');
-      title.textContent = '画像出力';
+      title.textContent = 'セット画像出力';
+
       const note = document.createElement('span');
-      note.textContent = 'A → B1 → B2 → C の順に表示';
+      note.textContent = '共有シート非対応のため、保存用画像を表示';
+
       head.append(title, note);
 
       const grid = document.createElement('div');
       grid.className = 'image-output-grid';
+      grid.appendChild(createImageOutputCard(
+        'A / B1 / B2 / C セット画像',
+        fileName,
+        url
+      ));
 
       els.imageOutputArea.append(head, grid);
-      showStatus('対戦表画像を作成しています。', 'ok', 2000);
-
-      for (const result of targets) {
-        const blob = await createScheduleImageBlob(result, state.lastCreatedAt);
-        const url = URL.createObjectURL(blob);
-        grid.appendChild(createImageOutputCard(result, state.lastCreatedAt, url));
-      }
-
       els.imageOutputArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      showStatus(`対戦表画像を${targets.length}件作成しました。各カードから保存できます。`, 'ok');
     }
 
-    function createImageOutputCard(result, createdAt, url) {
+    function hideImageOutputArea() {
+      if (!els.imageOutputArea) return;
+      els.imageOutputArea.hidden = true;
+      els.imageOutputArea.innerHTML = '';
+    }
+
+    function createImageOutputCard(titleText, fileName, url) {
       const card = document.createElement('div');
       card.className = 'image-output-card';
 
       const title = document.createElement('h4');
-      title.textContent = result.groupName;
+      title.textContent = titleText;
 
       const img = document.createElement('img');
       img.src = url;
-      img.alt = `${result.groupName} 対戦表`;
+      img.alt = titleText;
 
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${result.groupName}-${dateStamp(createdAt)}.png`;
+      link.download = fileName;
       link.textContent = '画像を保存';
 
       card.append(title, img, link);
@@ -1667,64 +1701,138 @@
 
     async function exportResultImage(result, createdAt, options = {}) {
       try {
+        const fileName = `${result.groupName}-${dateStamp(createdAt)}.png`;
         const blob = await createScheduleImageBlob(result, createdAt);
-        downloadImageBlob(blob, result, createdAt);
+        const shared = await tryShareImageBlob(blob, fileName, `${result.groupName} 対戦表`);
+
+        if (shared) {
+          if (!options.silent) showStatus(`${result.groupName} の共有シートを開きました。`, 'ok');
+          return;
+        }
+
+        downloadImageBlob(blob, fileName);
         if (!options.silent) showStatus(`${result.groupName} の対戦表画像を保存しました。`, 'ok');
       } catch (e) {
+        if (e && e.name === 'AbortError') {
+          if (!options.silent) showStatus('共有をキャンセルしました。', 'ok');
+          return;
+        }
         console.warn(e);
         if (!options.silent) showStatus('画像の作成に失敗しました。', 'error');
       }
     }
 
-    function downloadImageBlob(blob, result, createdAt) {
+    async function tryShareImageBlob(blob, fileName, title) {
+      if (!navigator.share || typeof File === 'undefined') {
+        return false;
+      }
+
+      const file = new File([blob], fileName, { type: 'image/png' });
+      const shareData = {
+        title,
+        text: title,
+        files: [file]
+      };
+
+      if (navigator.canShare && !navigator.canShare({ files: [file] })) {
+        return false;
+      }
+
+      await navigator.share(shareData);
+      return true;
+    }
+
+    function downloadImageBlob(blob, fileName) {
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = `${result.groupName}-${dateStamp(createdAt)}.png`;
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.setTimeout(() => URL.revokeObjectURL(link.href), 1200);
     }
 
-    function createScheduleImageBlob(result, createdAt) {
-      return new Promise((resolve, reject) => {
-        try {
-          const svgInfo = buildScheduleSvg(result, createdAt);
-          const blob = new Blob([svgInfo.svg], { type: 'image/svg+xml;charset=utf-8' });
-          const url = URL.createObjectURL(blob);
-          const img = new Image();
+    async function createScheduleImageBlob(result, createdAt) {
+      const canvas = await renderSvgInfoToCanvas(buildScheduleSvg(result, createdAt), 2);
+      return canvasToBlob(canvas);
+    }
 
-          img.onload = () => {
-            const scale = 2;
-            const canvas = document.createElement('canvas');
-            canvas.width = Math.round(svgInfo.width * scale);
-            canvas.height = Math.round(svgInfo.height * scale);
+    async function createCombinedScheduleImageBlob(results, createdAt) {
+      const scale = 1.35;
+      const gap = Math.round(34 * scale);
+      const canvases = [];
 
-            const ctx = canvas.getContext('2d');
-            ctx.scale(scale, scale);
-            ctx.fillStyle = '#f7fbff';
-            ctx.fillRect(0, 0, svgInfo.width, svgInfo.height);
-            ctx.drawImage(img, 0, 0, svgInfo.width, svgInfo.height);
+      for (const result of results) {
+        const canvas = await renderSvgInfoToCanvas(buildScheduleSvg(result, createdAt), scale);
+        canvases.push(canvas);
+      }
 
-            canvas.toBlob(downloadBlob => {
-              URL.revokeObjectURL(url);
-              if (!downloadBlob) {
-                reject(new Error('画像の作成に失敗しました。'));
-                return;
-              }
-              resolve(downloadBlob);
-            }, 'image/png');
-          };
+      const width = Math.max(...canvases.map(canvas => canvas.width));
+      const height = canvases.reduce((sum, canvas) => sum + canvas.height, 0) + gap * Math.max(0, canvases.length - 1);
 
-          img.onerror = () => {
-            URL.revokeObjectURL(url);
-            reject(new Error('画像の作成に失敗しました。'));
-          };
+      const combined = document.createElement('canvas');
+      combined.width = width;
+      combined.height = height;
 
-          img.src = url;
-        } catch (e) {
-          reject(e);
+      const ctx = combined.getContext('2d');
+      ctx.fillStyle = '#f7fbff';
+      ctx.fillRect(0, 0, width, height);
+
+      let y = 0;
+      canvases.forEach((canvas, index) => {
+        const x = Math.round((width - canvas.width) / 2);
+        ctx.drawImage(canvas, x, y);
+        y += canvas.height;
+
+        if (index < canvases.length - 1) {
+          ctx.fillStyle = '#f7fbff';
+          ctx.fillRect(0, y, width, gap);
+          y += gap;
         }
+      });
+
+      return canvasToBlob(combined);
+    }
+
+    function renderSvgInfoToCanvas(svgInfo, scale) {
+      return new Promise((resolve, reject) => {
+        const blob = new Blob([svgInfo.svg], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(svgInfo.width * scale);
+          canvas.height = Math.round(svgInfo.height * scale);
+
+          const ctx = canvas.getContext('2d');
+          ctx.scale(scale, scale);
+          ctx.fillStyle = '#f7fbff';
+          ctx.fillRect(0, 0, svgInfo.width, svgInfo.height);
+          ctx.drawImage(img, 0, 0, svgInfo.width, svgInfo.height);
+
+          URL.revokeObjectURL(url);
+          resolve(canvas);
+        };
+
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          reject(new Error('画像の作成に失敗しました。'));
+        };
+
+        img.src = url;
+      });
+    }
+
+    function canvasToBlob(canvas) {
+      return new Promise((resolve, reject) => {
+        canvas.toBlob(blob => {
+          if (!blob) {
+            reject(new Error('画像の作成に失敗しました。'));
+            return;
+          }
+          resolve(blob);
+        }, 'image/png');
       });
     }
 
