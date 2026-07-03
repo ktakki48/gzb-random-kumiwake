@@ -136,9 +136,10 @@
       width: 78px;
       border: 1px solid var(--line);
       border-radius: 12px;
-      padding: 10px 12px;
+      padding: 7px 8px;
       font: inherit;
-      min-height: 42px;
+      font-size: 13px;
+      min-height: 36px;
       background: #fff;
       text-align: center;
       font-weight: 800;
@@ -179,6 +180,14 @@
       justify-content: center;
       line-height: 1.2;
     }
+
+    .toolbar button {
+      white-space: nowrap;
+      padding-left: 8px;
+      padding-right: 8px;
+      font-size: clamp(12px, 3.35vw, 15px);
+      letter-spacing: -0.02em;
+    }
     button:active, .file-label:active { transform: translateY(1px); }
     button.secondary, .file-label.secondary {
       background: #eef5f2;
@@ -209,8 +218,8 @@
 
     .group-grid {
       display: grid;
-      grid-template-columns: 1fr;
-      gap: var(--card-gap);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
       margin-bottom: var(--card-gap);
     }
     .group-card {
@@ -221,11 +230,10 @@
       overflow: hidden;
     }
     .group-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 14px 14px 10px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      padding: 10px;
       border-bottom: 1px solid var(--line);
       background: #fbfdfc;
     }
@@ -235,7 +243,7 @@
       align-items: center;
       gap: 8px;
       margin: 0;
-      font-size: 18px;
+      font-size: 15px;
     }
     .badge {
       display: inline-flex;
@@ -252,24 +260,25 @@
     }
     .group-meta {
       margin: 3px 0 0;
-      font-size: 12px;
+      font-size: 10.5px;
       color: var(--muted);
+      line-height: 1.35;
     }
     .name-list {
-      padding: 12px 14px 14px;
+      padding: 8px;
       display: grid;
       grid-template-columns: 1fr;
-      gap: 8px;
+      gap: 6px;
     }
     .name-row {
       display: grid;
-      grid-template-columns: 32px 1fr 36px;
+      grid-template-columns: 22px 1fr 28px;
       align-items: center;
-      gap: 8px;
+      gap: 4px;
     }
     .num {
       color: var(--muted);
-      font-size: 13px;
+      font-size: 11px;
       text-align: right;
       font-variant-numeric: tabular-nums;
     }
@@ -293,10 +302,11 @@
       border: 1px solid var(--line);
       font-weight: 900;
       padding: 0;
-      min-height: 38px;
-      width: 36px;
+      min-height: 32px;
+      width: 28px;
     }
     .group-actions { display: flex; align-items: center; gap: 8px; }
+    .group-actions .small { min-height: 34px; font-size: 11px; padding: 6px 8px; }
 
     .result-head {
       display: flex;
@@ -351,14 +361,18 @@
 
     .schedule-grid {
       padding: 12px;
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
     }
     .round-card {
+      flex: 0 0 min(82vw, 320px);
+      scroll-snap-align: start;
       border: 1px solid var(--blue-line);
       border-radius: 18px;
-      padding: 12px;
+      padding: 10px;
       background: #fff;
       box-shadow: 0 4px 12px rgba(30, 64, 175, .03);
     }
@@ -366,7 +380,7 @@
       display: block;
       text-align: center;
       font-weight: 800;
-      font-size: 18px;
+      font-size: 16px;
       color: #2f4da8;
       background: var(--blue-pill);
       border-radius: 12px;
@@ -376,50 +390,50 @@
     .rest-text {
       text-align: center;
       color: var(--muted);
-      font-size: 14px;
-      margin-bottom: 10px;
+      font-size: 12px;
+      margin-bottom: 8px;
       min-height: 22px;
     }
     .court-panel {
       border: 1px solid #edf2fb;
       border-radius: 16px;
       background: var(--blue-soft);
-      padding: 10px 10px 12px;
-      margin-top: 10px;
+      padding: 8px;
+      margin-top: 8px;
     }
     .court-label {
       display: block;
       width: fit-content;
-      min-width: 120px;
-      margin: 0 auto 10px;
+      min-width: 96px;
+      margin: 0 auto 8px;
       text-align: center;
-      padding: 6px 14px;
+      padding: 5px 12px;
       border-radius: 999px;
       background: #eaf1ff;
       color: #38529c;
       font-weight: 800;
-      font-size: 14px;
+      font-size: 12px;
     }
     .team-box {
       background: #fff;
       border: 1px solid #e8edf6;
       border-radius: 14px;
-      padding: 14px 10px;
+      padding: 10px 8px;
       text-align: center;
-      font-size: 18px;
+      font-size: 15px;
       font-weight: 800;
       color: #1f2937;
-      min-height: 70px;
+      min-height: 52px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
     .vs {
       text-align: center;
-      font-size: 20px;
+      font-size: 16px;
       font-weight: 900;
       color: #5d6778;
-      padding: 8px 0;
+      padding: 5px 0;
     }
     .empty-result {
       padding: 16px;
@@ -434,6 +448,68 @@
       border-color: rgba(179, 38, 30, .35);
       background: #fff7f6;
       font-weight: 800;
+    }
+
+
+    .image-output-area {
+      margin-top: 14px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fbfdfc;
+    }
+    .image-output-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .image-output-head h3 {
+      margin: 0;
+      font-size: 16px;
+      color: var(--primary-2);
+    }
+    .image-output-head span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .image-output-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .image-output-card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      padding: 10px;
+    }
+    .image-output-card h4 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: var(--primary-2);
+    }
+    .image-output-card img {
+      display: block;
+      width: 100%;
+      border: 1px solid var(--line-soft);
+      border-radius: 10px;
+      background: #f7fbff;
+      margin-bottom: 8px;
+    }
+    .image-output-card a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 42px;
+      border-radius: 10px;
+      background: var(--primary);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 14px;
     }
 
     details {
@@ -461,10 +537,27 @@
       #clearAllBtn { grid-column: auto; }
       #printBtn { grid-column: auto; }
       .setting-box { grid-template-columns: minmax(0, 1fr) auto; }
-      .group-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .group-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--card-gap); }
+      .group-head { padding: 14px; }
+      .group-title { font-size: 18px; }
+      .group-meta { font-size: 12px; }
+      .name-list { padding: 12px 14px 14px; gap: 8px; }
+      .name-row { grid-template-columns: 32px 1fr 36px; gap: 8px; }
+      .num { font-size: 13px; }
+      input[type="text"] { padding: 10px 12px; font-size: 15px; min-height: 42px; }
+      .clear-btn { min-height: 38px; width: 36px; }
+      .group-actions .small { min-height: 40px; font-size: 13px; padding: 8px 12px; }
+      .image-output-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (min-width: 980px) {
-      .schedule-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .schedule-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        overflow-x: visible;
+      }
+      .round-card {
+        flex: initial;
+      }
     }
 
     @media print {
@@ -529,6 +622,7 @@
       <div id="resultArea" class="result-area">
         <div class="empty-result">まだ結果がありません。「全対戦表作成」を押してください。</div>
       </div>
+      <div id="imageOutputArea" class="image-output-area" hidden></div>
     </section>
 
     <details>
@@ -538,7 +632,7 @@
         <li>4〜6名、8〜12名で対戦表を作成し、1〜3名と7名はエラー表示にします。</li>
         <li>4〜6名は1コート、8〜12名は2コートで運用し、余り人数は毎試合「休憩」として自動で割り振ります。</li>
         <li>同じペアや似た対戦が連続しにくいよう、偏りを抑えるロジックで作成します。</li>
-        <li>各グループ結果カードの「画像出力」から、対戦表画像を個別に保存できます。</li>
+        <li>上部の「結果の画像出力」から4クラス分の画像を順番に表示できます。各グループ結果カードの「画像出力」から個別保存もできます。</li>
         <li>名簿は入力中に即時自動保存されます。名簿と前回作成した対戦表はlocalStorageを使用し、同じ端末・同じブラウザ・同じURLで保持されます。</li>
       </ul>
     </details>
@@ -548,6 +642,7 @@
     'use strict';
 
     const GROUP_STORAGE_KEY = 'gzb-random-match-groups-v1';
+    const GROUP_STORAGE_FALLBACK_KEYS = ['badminton-six-person-groups-v1'];
     const RESULT_STORAGE_KEY = 'gzb-random-match-results-v1';
     const SETTINGS_STORAGE_KEY = 'gzb-random-match-settings-v1';
     const MAX_MEMBERS = 12;
@@ -572,6 +667,7 @@
       status: document.getElementById('status'),
       resultArea: document.getElementById('resultArea'),
       resultDate: document.getElementById('resultDate'),
+      imageOutputArea: document.getElementById('imageOutputArea'),
       roundCountInput: document.getElementById('roundCountInput')
     };
 
@@ -617,6 +713,12 @@
         saveSettings(state.settings);
         showStatus('試合数設定を保存しました。', 'ok', 1600);
       });
+
+      window.addEventListener('pagehide', () => persistCurrentInputs());
+      window.addEventListener('beforeunload', () => persistCurrentInputs());
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') persistCurrentInputs();
+      });
     }
 
     function emptyGroups() {
@@ -642,15 +744,34 @@
     }
 
     function loadGroups() {
+      const primary = readStoredGroups(GROUP_STORAGE_KEY);
+      if (primary) return primary;
+
+      for (const key of GROUP_STORAGE_FALLBACK_KEYS) {
+        const migrated = readStoredGroups(key);
+        if (migrated && hasAnyGroupMember(migrated)) {
+          saveGroups(migrated);
+          return migrated;
+        }
+      }
+
+      return emptyGroups();
+    }
+
+    function readStoredGroups(key) {
       try {
-        const saved = window.localStorage.getItem(GROUP_STORAGE_KEY);
-        if (!saved) return emptyGroups();
+        const saved = window.localStorage.getItem(key);
+        if (!saved) return null;
         const parsed = JSON.parse(saved);
         return normalizeGroups(parsed.groups || parsed);
       } catch (e) {
         console.warn(e);
-        return emptyGroups();
+        return null;
       }
+    }
+
+    function hasAnyGroupMember(groups) {
+      return GROUP_NAMES.some(groupName => Array.isArray(groups[groupName]) && groups[groupName].length > 0);
     }
 
     function saveGroups(groups) {
@@ -746,11 +867,9 @@
           input.value = state.groups[groupName][i] || '';
           input.dataset.group = groupName;
           input.dataset.index = String(i);
-          input.addEventListener('input', () => {
-            readInputsToState();
-            saveGroups(state.groups);
-            renderGroupBadgesOnly();
-          });
+          input.addEventListener('input', persistCurrentInputs);
+          input.addEventListener('change', persistCurrentInputs);
+          input.addEventListener('blur', persistCurrentInputs);
 
           const clearBtn = document.createElement('button');
           clearBtn.className = 'clear-btn';
@@ -800,7 +919,15 @@
       state.groups = normalizeGroups(next);
     }
 
+    function persistCurrentInputs() {
+      if (!els.groupGrid) return;
+      readInputsToState();
+      saveGroups(state.groups);
+      renderGroupBadgesOnly();
+    }
+
     function generateSelectedGroups(groupNames) {
+      persistCurrentInputs();
       const createdAt = new Date();
       const results = groupNames.map(groupName => makeGroupResult(groupName, state.groups[groupName] || [], state.settings.roundCount));
 
@@ -1142,6 +1269,10 @@
 
     function renderResults(results, createdAt) {
       els.resultArea.innerHTML = '';
+      if (els.imageOutputArea) {
+        els.imageOutputArea.hidden = true;
+        els.imageOutputArea.innerHTML = '';
+      }
       els.resultDate.textContent = formatDateTime(createdAt);
 
       if (!results.length) {
@@ -1427,6 +1558,10 @@
       if (removeSaved) clearSavedResult();
       els.resultDate.textContent = '未作成';
       els.resultArea.innerHTML = '<div class="empty-result">まだ結果がありません。「全対戦表作成」を押してください。</div>';
+      if (els.imageOutputArea) {
+        els.imageOutputArea.hidden = true;
+        els.imageOutputArea.innerHTML = '';
+      }
     }
 
     function showStatus(message, type = '', timeout = 2600) {
@@ -1473,28 +1608,85 @@
 
     async function exportAllResultImages() {
       const results = Array.isArray(state.lastResults) ? state.lastResults : [];
-      const targets = results.filter(result => !result.error && result.rounds && result.rounds.length > 0);
+      const resultMap = new Map(results.map(result => [result.groupName, result]));
+      const targets = GROUP_NAMES
+        .map(groupName => resultMap.get(groupName))
+        .filter(result => result && !result.error && result.rounds && result.rounds.length > 0);
 
       if (!targets.length || !state.lastCreatedAt) {
         showStatus('画像出力できる対戦表がまだありません。先に対戦表を作成してください。', 'error');
         return;
       }
 
-      showStatus('対戦表画像を出力しています。', 'ok', 1800);
+      els.imageOutputArea.hidden = false;
+      els.imageOutputArea.innerHTML = '';
+
+      const head = document.createElement('div');
+      head.className = 'image-output-head';
+      const title = document.createElement('h3');
+      title.textContent = '画像出力';
+      const note = document.createElement('span');
+      note.textContent = 'A → B1 → B2 → C の順に表示';
+      head.append(title, note);
+
+      const grid = document.createElement('div');
+      grid.className = 'image-output-grid';
+
+      els.imageOutputArea.append(head, grid);
+      showStatus('対戦表画像を作成しています。', 'ok', 2000);
 
       for (const result of targets) {
-        await exportResultImage(result, state.lastCreatedAt, { silent: true });
-        await wait(350);
+        const blob = await createScheduleImageBlob(result, state.lastCreatedAt);
+        const url = URL.createObjectURL(blob);
+        grid.appendChild(createImageOutputCard(result, state.lastCreatedAt, url));
       }
 
-      showStatus(`対戦表画像を${targets.length}件出力しました。`, 'ok');
+      els.imageOutputArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      showStatus(`対戦表画像を${targets.length}件作成しました。各カードから保存できます。`, 'ok');
     }
 
-    function wait(ms) {
-      return new Promise(resolve => window.setTimeout(resolve, ms));
+    function createImageOutputCard(result, createdAt, url) {
+      const card = document.createElement('div');
+      card.className = 'image-output-card';
+
+      const title = document.createElement('h4');
+      title.textContent = result.groupName;
+
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = `${result.groupName} 対戦表`;
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${result.groupName}-${dateStamp(createdAt)}.png`;
+      link.textContent = '画像を保存';
+
+      card.append(title, img, link);
+      return card;
     }
 
     async function exportResultImage(result, createdAt, options = {}) {
+      try {
+        const blob = await createScheduleImageBlob(result, createdAt);
+        downloadImageBlob(blob, result, createdAt);
+        if (!options.silent) showStatus(`${result.groupName} の対戦表画像を保存しました。`, 'ok');
+      } catch (e) {
+        console.warn(e);
+        if (!options.silent) showStatus('画像の作成に失敗しました。', 'error');
+      }
+    }
+
+    function downloadImageBlob(blob, result, createdAt) {
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `${result.groupName}-${dateStamp(createdAt)}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.setTimeout(() => URL.revokeObjectURL(link.href), 1200);
+    }
+
+    function createScheduleImageBlob(result, createdAt) {
       return new Promise((resolve, reject) => {
         try {
           const svgInfo = buildScheduleSvg(result, createdAt);
@@ -1516,38 +1708,21 @@
 
             canvas.toBlob(downloadBlob => {
               URL.revokeObjectURL(url);
-
               if (!downloadBlob) {
-                if (!options.silent) showStatus('画像の作成に失敗しました。', 'error');
                 reject(new Error('画像の作成に失敗しました。'));
                 return;
               }
-
-              const link = document.createElement('a');
-              link.href = URL.createObjectURL(downloadBlob);
-              link.download = `${result.groupName}-${dateStamp(createdAt)}.png`;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              URL.revokeObjectURL(link.href);
-
-              if (!options.silent) {
-                showStatus(`${result.groupName} の対戦表画像を保存しました。`, 'ok');
-              }
-              resolve();
+              resolve(downloadBlob);
             }, 'image/png');
           };
 
           img.onerror = () => {
             URL.revokeObjectURL(url);
-            if (!options.silent) showStatus('画像の作成に失敗しました。', 'error');
             reject(new Error('画像の作成に失敗しました。'));
           };
 
           img.src = url;
         } catch (e) {
-          console.warn(e);
-          if (!options.silent) showStatus('画像の作成に失敗しました。', 'error');
           reject(e);
         }
       });
