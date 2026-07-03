@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#f5307b" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="GZBクラス別け" />
+  <meta name="apple-mobile-web-app-title" content="GZBクラス別対戦表" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="./icons/favicon-16.png" />
   <link rel="shortcut icon" href="./favicon.ico" />
-  <title>GZB ランダム組み分け</title>
+  <title>GZB クラス別 ランダム対戦表</title>
   <style>
     :root {
       --bg: #f6f7f4;
@@ -20,11 +20,14 @@
       --ink: #18201e;
       --muted: #62706b;
       --line: #d9e1dc;
+      --line-soft: #e6ece9;
       --primary: #146c5f;
       --primary-2: #0f574d;
-      --accent: #f2b84b;
       --danger: #b3261e;
       --soft: #e9f4f1;
+      --blue-soft: #f6f9ff;
+      --blue-line: #d9e4f5;
+      --blue-pill: #e9efff;
       --shadow: 0 10px 28px rgba(16, 24, 20, .08);
       --radius: 18px;
       --card-gap: 16px;
@@ -46,26 +49,23 @@
       color: #fff;
       box-shadow: var(--shadow);
     }
-
     .header-inner {
       max-width: 1100px;
       margin: 0 auto;
     }
-
     h1 {
       margin: 0;
       font-size: clamp(22px, 5vw, 34px);
       letter-spacing: .02em;
     }
-
     .lead {
       margin: 8px 0 0;
-      color: rgba(255, 255, 255, .88);
+      color: rgba(255,255,255,.88);
       font-size: 14px;
     }
 
     main {
-      max-width: 1100px;
+      max-width: 1180px;
       margin: 0 auto;
       padding: 18px 14px 80px;
     }
@@ -79,31 +79,86 @@
       margin-bottom: var(--card-gap);
     }
 
+    .action-panel {
+      display: grid;
+      gap: 12px;
+    }
+
+    .notice {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 12px;
+      background: var(--soft);
+      border: 1px solid #cce5dd;
+      border-radius: 14px;
+      color: #224c45;
+      font-size: 13px;
+      margin: 0;
+    }
+    .notice strong { white-space: nowrap; }
+
+    .setting-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .setting-box {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px 14px;
+      padding: 12px;
+      border-radius: 14px;
+      background: #fbfdfc;
+      border: 1px solid var(--line);
+    }
+    .setting-title {
+      min-width: 0;
+    }
+    .setting-box label {
+      display: block;
+      font-weight: 800;
+      color: var(--primary-2);
+      line-height: 1.25;
+    }
+    .round-input-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      justify-self: end;
+      color: var(--primary-2);
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .setting-box input[type="number"] {
+      width: 78px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font: inherit;
+      min-height: 42px;
+      background: #fff;
+      text-align: center;
+      font-weight: 800;
+    }
+    .setting-note {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 3px;
+      line-height: 1.35;
+    }
+
     .toolbar,
     .sub-toolbar {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
     }
-
-    .sub-toolbar {
-      margin-top: 10px;
-    }
-
-    .toolbar > button,
-    .sub-toolbar > button,
-    .sub-toolbar > .file-label {
-      width: 100%;
-      min-height: 54px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      line-height: 1.2;
-    }
-
-    #clearAllBtn {
-      grid-column: 1 / -1;
-    }
+    #clearAllBtn { grid-column: 1 / -1; }
+    #printBtn { grid-column: 1 / -1; }
 
     button, .file-label {
       appearance: none;
@@ -117,30 +172,25 @@
       cursor: pointer;
       touch-action: manipulation;
       text-align: center;
-      min-height: 44px;
+      min-height: 54px;
+      width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.2;
     }
-
     button:active, .file-label:active { transform: translateY(1px); }
     button.secondary, .file-label.secondary {
       background: #eef5f2;
       color: var(--primary-2);
       border: 1px solid #c8dbd5;
     }
-    button.warning { background: #7a4b00; }
     button.danger { background: var(--danger); }
-    button.small {
-      padding: 8px 10px;
+    button.small, .file-label.small {
+      min-height: 40px;
       font-size: 13px;
-      min-height: 36px;
+      padding: 8px 12px;
       border-radius: 10px;
-    }
-
-    .sub-toolbar button.small,
-    .sub-toolbar .file-label.small {
-      padding: 12px 14px;
-      font-size: 15px;
-      min-height: 54px;
-      border-radius: 12px;
     }
     button:disabled {
       opacity: .45;
@@ -148,19 +198,14 @@
       transform: none;
     }
 
-    .notice {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      padding: 12px;
-      background: var(--soft);
-      border: 1px solid #cce5dd;
-      border-radius: 14px;
-      color: #224c45;
+    .status {
+      min-height: 22px;
+      color: var(--muted);
       font-size: 13px;
-      margin: 0 0 12px;
+      margin-top: 10px;
     }
-    .notice strong { white-space: nowrap; }
+    .status.ok { color: var(--primary-2); font-weight: 700; }
+    .status.error { color: var(--danger); font-weight: 700; }
 
     .group-grid {
       display: grid;
@@ -168,7 +213,6 @@
       gap: var(--card-gap);
       margin-bottom: var(--card-gap);
     }
-
     .group-card {
       background: var(--card);
       border: 1px solid var(--line);
@@ -176,7 +220,6 @@
       box-shadow: var(--shadow);
       overflow: hidden;
     }
-
     .group-head {
       display: flex;
       align-items: center;
@@ -186,7 +229,6 @@
       border-bottom: 1px solid var(--line);
       background: #fbfdfc;
     }
-
     .group-title-wrap { min-width: 0; }
     .group-title {
       display: flex;
@@ -213,28 +255,24 @@
       font-size: 12px;
       color: var(--muted);
     }
-
     .name-list {
       padding: 12px 14px 14px;
       display: grid;
       grid-template-columns: 1fr;
       gap: 8px;
     }
-
     .name-row {
       display: grid;
       grid-template-columns: 32px 1fr 36px;
       align-items: center;
       gap: 8px;
     }
-
     .num {
       color: var(--muted);
       font-size: 13px;
       text-align: right;
       font-variant-numeric: tabular-nums;
     }
-
     input[type="text"] {
       width: 100%;
       border: 1px solid var(--line);
@@ -244,11 +282,11 @@
       min-height: 42px;
       background: #fff;
     }
-    input[type="text"]:focus {
+    input[type="text"]:focus,
+    input[type="number"]:focus {
       outline: 3px solid rgba(20, 108, 95, .16);
       border-color: var(--primary);
     }
-
     .clear-btn {
       background: #f2f3f1;
       color: var(--muted);
@@ -258,11 +296,7 @@
       min-height: 38px;
       width: 36px;
     }
-
-    .result-area {
-      display: grid;
-      gap: var(--card-gap);
-    }
+    .group-actions { display: flex; align-items: center; gap: 8px; }
 
     .result-head {
       display: flex;
@@ -272,24 +306,24 @@
       align-items: center;
       margin-bottom: 8px;
     }
-
     .result-title {
       margin: 0;
       font-size: 20px;
     }
-
     .result-date {
       color: var(--muted);
       font-size: 13px;
     }
-
+    .result-area {
+      display: grid;
+      gap: var(--card-gap);
+    }
     .result-card {
       border: 1px solid var(--line);
       border-radius: 16px;
       background: #fff;
       overflow: hidden;
     }
-
     .result-group-head {
       padding: 12px 14px;
       background: #f7fbf9;
@@ -297,63 +331,96 @@
       display: flex;
       justify-content: space-between;
       gap: 10px;
-      align-items: baseline;
+      align-items: center;
+      flex-wrap: wrap;
     }
-
     .result-group-head h3 {
       margin: 0;
       font-size: 17px;
     }
-
     .count-text {
       color: var(--muted);
       font-size: 12px;
-      white-space: nowrap;
+      margin-top: 2px;
+    }
+    .result-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
-    .blocks {
+    .schedule-grid {
       padding: 12px;
       display: grid;
-      gap: 10px;
+      grid-template-columns: 1fr;
+      gap: 12px;
     }
-
-    .block {
-      border: 1px dashed #c7d7d2;
-      border-radius: 14px;
-      padding: 10px;
-      background: #fcfefd;
+    .round-card {
+      border: 1px solid var(--blue-line);
+      border-radius: 18px;
+      padding: 12px;
+      background: #fff;
+      box-shadow: 0 4px 12px rgba(30, 64, 175, .03);
     }
-
-    .block-title {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--primary-2);
-      font-size: 13px;
+    .round-title {
+      display: block;
+      text-align: center;
       font-weight: 800;
+      font-size: 18px;
+      color: #2f4da8;
+      background: var(--blue-pill);
+      border-radius: 12px;
+      padding: 7px 12px;
       margin-bottom: 8px;
     }
-
-    .member-list {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 6px;
-      margin: 0;
-      padding: 0;
-      list-style: none;
+    .rest-text {
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 10px;
+      min-height: 22px;
     }
-
-    .member {
-      padding: 8px 10px;
-      border-radius: 10px;
-      background: #f1f5f3;
-      font-weight: 700;
-      min-width: 0;
-      overflow-wrap: anywhere;
+    .court-panel {
+      border: 1px solid #edf2fb;
+      border-radius: 16px;
+      background: var(--blue-soft);
+      padding: 10px 10px 12px;
+      margin-top: 10px;
     }
-
-    .remainder .block-title { color: #8a5a00; }
-    .remainder .member { background: #fff6df; }
+    .court-label {
+      display: block;
+      width: fit-content;
+      min-width: 120px;
+      margin: 0 auto 10px;
+      text-align: center;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: #eaf1ff;
+      color: #38529c;
+      font-weight: 800;
+      font-size: 14px;
+    }
+    .team-box {
+      background: #fff;
+      border: 1px solid #e8edf6;
+      border-radius: 14px;
+      padding: 14px 10px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 800;
+      color: #1f2937;
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .vs {
+      text-align: center;
+      font-size: 20px;
+      font-weight: 900;
+      color: #5d6778;
+      padding: 8px 0;
+    }
     .empty-result {
       padding: 16px;
       color: var(--muted);
@@ -362,22 +429,12 @@
       border-radius: 16px;
       background: #fff;
     }
-
     .error-result {
       color: var(--danger);
       border-color: rgba(179, 38, 30, .35);
       background: #fff7f6;
       font-weight: 800;
     }
-
-    .status {
-      min-height: 22px;
-      color: var(--muted);
-      font-size: 13px;
-      margin-top: 10px;
-    }
-    .status.ok { color: var(--primary-2); font-weight: 700; }
-    .status.error { color: var(--danger); font-weight: 700; }
 
     details {
       background: #fff;
@@ -396,70 +453,93 @@
       color: var(--muted);
       font-size: 13px;
     }
-
     #importFile { display: none; }
 
     @media (min-width: 720px) {
-      .toolbar, .sub-toolbar { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-      #clearAllBtn { grid-column: 1 / -1; }
+      .toolbar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .sub-toolbar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      #clearAllBtn { grid-column: auto; }
+      #printBtn { grid-column: auto; }
+      .setting-box { grid-template-columns: minmax(0, 1fr) auto; }
       .group-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .member-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (min-width: 980px) {
+      .schedule-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
 
     @media print {
-      header, .toolbar, .sub-toolbar, details, .group-grid, .notice { display: none !important; }
+      header, .action-panel, .group-grid, details { display: none !important; }
       body { background: #fff; }
       main { padding: 0; }
-      .panel { box-shadow: none; border: 0; }
-      .result-card, .block { break-inside: avoid; }
+      .panel { box-shadow: none; border: 0; padding: 0; }
+      .result-card, .round-card, .court-panel { break-inside: avoid; }
+      .schedule-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      button { display: none !important; }
     }
   </style>
 </head>
 <body>
   <header>
     <div class="header-inner">
-      <h1>GZB ランダム組み分け</h1>
-      <p class="lead">A / B1 / B2 / C の各グループから、最大6名を目安に均等な組をランダム作成します。<br>名簿はこの端末のブラウザ内に保存されます。</p>
+      <h1>GZB クラス別 ランダム対戦表</h1>
+      <p class="lead">A / B1 / B2 / C の各グループから、ランダムなダブルス対戦表を作成します。<br>名簿と前回作成した対戦表は、この端末のブラウザ内に保存されます。</p>
     </div>
   </header>
 
   <main>
     <section class="panel action-panel" aria-label="操作">
-      <p class="notice"><strong>使い方</strong><span>名簿を編集 → 保存 → 「全グループ作成」。4〜6名は1組、8〜12名はできるだけ均等な2組に分けます。<br>1〜3名と7名は人数エラーになります。</span></p>
+      <p class="notice"><strong>使い方</strong><span>名簿を編集 → 「全対戦表作成」。4〜6名は1コート、8〜12名は2コートで対戦表を作成します。<br>1〜3名と7名は人数エラーです。余りの人は各試合で「休憩」と表示します。</span></p>
+
+      <div class="setting-grid">
+        <div class="setting-box">
+          <div class="setting-title">
+            <label for="roundCountInput">各グループの試合数</label>
+            <span class="setting-note">初期値9試合。1〜20試合の範囲で変更できます。</span>
+          </div>
+          <div class="round-input-wrap">
+            <input id="roundCountInput" type="number" min="1" max="20" inputmode="numeric" />
+            <span>試合</span>
+          </div>
+        </div>
+      </div>
+
       <div class="toolbar">
-        <button id="saveBtn" type="button">名簿を保存</button>
-        <button id="shuffleAllBtn" type="button">全グループ作成</button>
-        <button id="copyBtn" type="button" class="secondary">結果をコピー</button>
-        <button id="printBtn" type="button" class="secondary">印刷/PDF</button>
+        <button id="shuffleAllBtn" type="button">全対戦表作成</button>
+        <button id="copyBtn" type="button" class="secondary">結果のテキスト出力</button>
+        <button id="printBtn" type="button" class="secondary">結果の画像出力</button>
       </div>
       <div class="sub-toolbar">
-        <button id="exportBtn" type="button" class="small secondary">名簿バックアップ</button>
-        <label class="file-label small secondary" for="importFile">名簿を復元</label>
+        <button id="exportBtn" type="button" class="secondary">名簿バックアップ</button>
+        <label class="file-label secondary" for="importFile">名簿を復元</label>
         <input id="importFile" type="file" accept="application/json,.json" />
-        <button id="clearAllBtn" type="button" class="small danger">全名簿クリア</button>
+        <button id="clearAllBtn" type="button" class="danger">全名簿クリア</button>
       </div>
       <div id="status" class="status" role="status" aria-live="polite"></div>
     </section>
 
-    <section class="group-grid" id="groupGrid" aria-label="グループ別名簿"></section>
+    <section class="group-grid" id="groupGrid" aria-label="グループ名簿"></section>
 
-    <section class="panel" aria-label="組分け結果">
+    <section class="panel" aria-label="対戦表結果">
       <div class="result-head">
-        <h2 class="result-title">組分け結果</h2>
-        <div id="resultDate" class="result-date">未作成</div>
+        <div>
+          <h2 class="result-title">対戦表結果</h2>
+          <div class="result-date">作成日時: <span id="resultDate">未作成</span></div>
+        </div>
       </div>
       <div id="resultArea" class="result-area">
-        <div class="empty-result">まだ結果がありません。「全グループ作成」を押してください。</div>
+        <div class="empty-result">まだ結果がありません。「全対戦表作成」を押してください。</div>
       </div>
     </section>
 
     <details>
-      <summary>iPhoneでアプリのように使う場合</summary>
+      <summary>補足・保存仕様</summary>
       <ul class="help-list">
-        <li>GitHub Pagesで公開したURLをiPhoneのSafariで開きます。</li>
-        <li>共有ボタン → 「ホーム画面に追加」を選ぶと、アプリ風に起動できます。</li>
-        <li>名簿保存はlocalStorageを使用します。同じ端末・同じブラウザ・同じURLで保持されます。</li>
-        <li>機種変更やURL変更に備える場合は「名簿バックアップ」でバックアップしてください。</li>
+        <li>各グループは最大12名まで登録できます。</li>
+        <li>4〜6名、8〜12名で対戦表を作成し、1〜3名と7名はエラー表示にします。</li>
+        <li>4〜6名は1コート、8〜12名は2コートで運用し、余り人数は毎試合「休憩」として自動で割り振ります。</li>
+        <li>同じペアや似た対戦が連続しにくいよう、偏りを抑えるロジックで作成します。</li>
+        <li>各グループ結果カードの「画像出力」から、対戦表画像を個別に保存できます。</li>
+        <li>名簿は入力中に即時自動保存されます。名簿と前回作成した対戦表はlocalStorageを使用し、同じ端末・同じブラウザ・同じURLで保持されます。</li>
       </ul>
     </details>
   </main>
@@ -467,58 +547,59 @@
   <script>
     'use strict';
 
-    const STORAGE_KEY = 'badminton-six-person-groups-v1';
+    const GROUP_STORAGE_KEY = 'gzb-random-match-groups-v1';
+    const RESULT_STORAGE_KEY = 'gzb-random-match-results-v1';
+    const SETTINGS_STORAGE_KEY = 'gzb-random-match-settings-v1';
     const MAX_MEMBERS = 12;
+    const DEFAULT_ROUND_COUNT = 9;
+    const MAX_COURTS_PER_GROUP = 2;
     const GROUP_NAMES = ['Aグループ', 'B1グループ', 'B2グループ', 'Cグループ'];
     const DEFAULT_GROUPS = {
-      'Aグループ': ['宇津', '福田', '川嶋', '湯澤', '大野'],
-      'B1グループ': ['竿田', '加藤', '宇都', '瀧本', '三島', '篠原', '山本', '曹磊', '利君', 'モモ', '川尻'],
-      'B2グループ': ['名和', '杉元', '髙木', '南', '湯浅', '京野', '三橋', 'エリ', '源内', '小池', 'ニノ'],
-      'Cグループ': ['星野', '高橋さ', '中村', '立島', '李', '石丸', '林', '莉莉', 'mackey', '娟', '吴', '三尾']
-    };
-
-    const state = {
-      groups: normalizeGroups(loadGroups()),
-      lastResultText: ''
+      'Aグループ': [],
+      'B1グループ': [],
+      'B2グループ': [],
+      'Cグループ': []
     };
 
     const els = {
       groupGrid: document.getElementById('groupGrid'),
-      resultArea: document.getElementById('resultArea'),
-      resultDate: document.getElementById('resultDate'),
-      status: document.getElementById('status'),
-      saveBtn: document.getElementById('saveBtn'),
       shuffleAllBtn: document.getElementById('shuffleAllBtn'),
       copyBtn: document.getElementById('copyBtn'),
       printBtn: document.getElementById('printBtn'),
       exportBtn: document.getElementById('exportBtn'),
       importFile: document.getElementById('importFile'),
-      clearAllBtn: document.getElementById('clearAllBtn')
+      clearAllBtn: document.getElementById('clearAllBtn'),
+      status: document.getElementById('status'),
+      resultArea: document.getElementById('resultArea'),
+      resultDate: document.getElementById('resultDate'),
+      roundCountInput: document.getElementById('roundCountInput')
     };
 
+    const state = {
+      groups: loadGroups(),
+      settings: loadSettings(),
+      lastResultText: '',
+      lastResults: [],
+      lastCreatedAt: null
+    };
+
+    els.roundCountInput.value = String(state.settings.roundCount);
     renderGroups();
+    restoreLastResult();
     bindEvents();
     registerServiceWorker();
 
     function bindEvents() {
-      els.saveBtn.addEventListener('click', () => {
-        readInputsToState();
-        saveGroups(state.groups);
-        showStatus('名簿を保存しました。', 'ok');
-        renderGroups();
-      });
-
       els.shuffleAllBtn.addEventListener('click', () => {
         readInputsToState();
         saveGroups(state.groups);
-        generateAllGroups();
+        generateSelectedGroups(GROUP_NAMES);
       });
 
       els.copyBtn.addEventListener('click', copyResult);
-      els.printBtn.addEventListener('click', () => window.print());
+      els.printBtn.addEventListener('click', exportAllResultImages);
       els.exportBtn.addEventListener('click', exportJson);
       els.importFile.addEventListener('change', importJson);
-
       els.clearAllBtn.addEventListener('click', () => {
         const ok = window.confirm('全グループの名簿を空にします。');
         if (!ok) return;
@@ -526,12 +607,25 @@
         saveGroups(state.groups);
         renderGroups();
         clearResult();
-        showStatus('全名簿をクリアしました。', 'ok');
+        showStatus('全グループの名簿をクリアしました。', 'ok');
+      });
+
+      els.roundCountInput.addEventListener('change', () => {
+        const next = normalizeRoundCount(els.roundCountInput.value);
+        state.settings.roundCount = next;
+        els.roundCountInput.value = String(next);
+        saveSettings(state.settings);
+        showStatus('試合数設定を保存しました。', 'ok', 1600);
       });
     }
 
     function emptyGroups() {
-      return Object.fromEntries(GROUP_NAMES.map(name => [name, []]));
+      return {
+        'Aグループ': [],
+        'B1グループ': [],
+        'B2グループ': [],
+        'Cグループ': []
+      };
     }
 
     function normalizeGroups(input) {
@@ -549,13 +643,13 @@
 
     function loadGroups() {
       try {
-        const saved = window.localStorage.getItem(STORAGE_KEY);
-        if (!saved) return DEFAULT_GROUPS;
+        const saved = window.localStorage.getItem(GROUP_STORAGE_KEY);
+        if (!saved) return emptyGroups();
         const parsed = JSON.parse(saved);
-        return parsed.groups || parsed;
+        return normalizeGroups(parsed.groups || parsed);
       } catch (e) {
         console.warn(e);
-        return DEFAULT_GROUPS;
+        return emptyGroups();
       }
     }
 
@@ -565,7 +659,33 @@
         savedAt: new Date().toISOString(),
         groups: normalizeGroups(groups)
       };
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      window.localStorage.setItem(GROUP_STORAGE_KEY, JSON.stringify(payload));
+    }
+
+    function loadSettings() {
+      try {
+        const saved = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
+        if (!saved) return { roundCount: DEFAULT_ROUND_COUNT };
+        const parsed = JSON.parse(saved);
+        return { roundCount: normalizeRoundCount(parsed.roundCount) };
+      } catch (e) {
+        console.warn(e);
+        return { roundCount: DEFAULT_ROUND_COUNT };
+      }
+    }
+
+    function saveSettings(settings) {
+      const payload = {
+        version: 1,
+        savedAt: new Date().toISOString(),
+        roundCount: normalizeRoundCount(settings.roundCount)
+      };
+      window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(payload));
+    }
+
+    function normalizeRoundCount(value) {
+      const num = Math.max(1, Math.min(20, Number.parseInt(value, 10) || DEFAULT_ROUND_COUNT));
+      return num;
     }
 
     function renderGroups() {
@@ -580,35 +700,36 @@
 
         const titleWrap = document.createElement('div');
         titleWrap.className = 'group-title-wrap';
-
-        const h2 = document.createElement('h2');
-        h2.className = 'group-title';
-        const titleText = document.createElement('span');
-        titleText.textContent = groupName;
+        const title = document.createElement('h2');
+        title.className = 'group-title';
+        title.textContent = groupName;
         const badge = document.createElement('span');
         badge.className = 'badge';
         badge.textContent = `${state.groups[groupName].length}/${MAX_MEMBERS}`;
-        h2.append(titleText, badge);
-
+        title.appendChild(badge);
         const meta = document.createElement('p');
         meta.className = 'group-meta';
-        meta.textContent = '最大6名目安で均等作成';
-        titleWrap.append(h2, meta);
+        meta.textContent = '4〜6名・8〜12名で作成 / 1〜3名・7名はエラー';
+        titleWrap.append(title, meta);
 
-        const oneBtn = document.createElement('button');
-        oneBtn.className = 'small secondary';
-        oneBtn.type = 'button';
-        oneBtn.textContent = 'この組だけ';
-        oneBtn.addEventListener('click', () => {
+        const actions = document.createElement('div');
+        actions.className = 'group-actions';
+        const makeOneBtn = document.createElement('button');
+        makeOneBtn.type = 'button';
+        makeOneBtn.className = 'secondary small';
+        makeOneBtn.textContent = 'このクラス作成';
+        makeOneBtn.addEventListener('click', () => {
           readInputsToState();
           saveGroups(state.groups);
           generateSelectedGroups([groupName]);
         });
+        actions.appendChild(makeOneBtn);
 
-        head.append(titleWrap, oneBtn);
+        head.append(titleWrap, actions);
 
         const list = document.createElement('div');
         list.className = 'name-list';
+
         for (let i = 0; i < MAX_MEMBERS; i++) {
           const row = document.createElement('div');
           row.className = 'name-row';
@@ -625,11 +746,10 @@
           input.value = state.groups[groupName][i] || '';
           input.dataset.group = groupName;
           input.dataset.index = String(i);
-          input.addEventListener('change', () => {
+          input.addEventListener('input', () => {
             readInputsToState();
             saveGroups(state.groups);
             renderGroupBadgesOnly();
-            showStatus('自動保存しました。', 'ok', 1400);
           });
 
           const clearBtn = document.createElement('button');
@@ -680,51 +800,320 @@
       state.groups = normalizeGroups(next);
     }
 
-    function generateAllGroups() {
-      generateSelectedGroups(GROUP_NAMES);
-    }
-
     function generateSelectedGroups(groupNames) {
       const createdAt = new Date();
-      const results = groupNames.map(groupName => makeGroupResult(groupName, state.groups[groupName] || []));
-      renderResults(results, createdAt);
-      state.lastResultText = buildResultText(results, createdAt);
-      const hasError = results.some(result => result.error);
-      showStatus(hasError ? '一部グループで人数エラーがあります。' : '組分けを作成しました。', hasError ? 'error' : 'ok');
-    }
+      const results = groupNames.map(groupName => makeGroupResult(groupName, state.groups[groupName] || [], state.settings.roundCount));
 
-    function makeGroupResult(groupName, members) {
-      const clean = members.map(v => String(v ?? '').trim()).filter(Boolean).slice(0, MAX_MEMBERS);
-      const total = clean.length;
-      const shuffled = shuffle(clean);
-      const blocks = [];
-      let error = '';
-
-      if (total === 0) {
-        // 登録なし
-      } else if (total >= 1 && total <= 3) {
-        error = '4名以上で構成して下さい。';
-      } else if (total <= 6) {
-        blocks.push(shuffled.splice(0, total));
-      } else if (total === 7) {
-        error = '8名以上で構成して下さい。';
+      if (groupNames.length === GROUP_NAMES.length) {
+        renderResults(results, createdAt);
+        state.lastResults = results;
       } else {
-        const groupCount = Math.ceil(total / 6);
-        const baseSize = Math.floor(total / groupCount);
-        const extra = total % groupCount;
-
-        for (let i = 0; i < groupCount; i++) {
-          const size = baseSize + (i < extra ? 1 : 0);
-          blocks.push(shuffled.splice(0, size));
-        }
+        const merged = mergeResults(state.lastResults, results);
+        renderResults(merged, createdAt);
+        state.lastResults = merged;
       }
 
+      state.lastCreatedAt = createdAt;
+      state.lastResultText = buildResultText(state.lastResults, createdAt);
+      saveLastResult(state.lastResults, createdAt, state.lastResultText);
+      const hasError = state.lastResults.some(result => result.error);
+      showStatus(hasError ? '一部グループで人数エラーがあります。' : '対戦表を作成しました。', hasError ? 'error' : 'ok');
+    }
+
+    function mergeResults(baseResults, updatedResults) {
+      const map = new Map();
+      (Array.isArray(baseResults) ? baseResults : []).forEach(result => map.set(result.groupName, result));
+      updatedResults.forEach(result => map.set(result.groupName, result));
+      return GROUP_NAMES.map(groupName => map.get(groupName) || makeEmptyResult(groupName));
+    }
+
+    function makeEmptyResult(groupName) {
+      return {
+        groupName,
+        total: 0,
+        roundCount: state.settings.roundCount,
+        courtCount: 0,
+        restPerRound: 0,
+        rounds: [],
+        error: ''
+      };
+    }
+
+    function makeGroupResult(groupName, members, roundCount) {
+      const players = members.map(v => String(v ?? '').trim()).filter(Boolean).slice(0, MAX_MEMBERS);
+      const total = players.length;
+      const cleanRoundCount = normalizeRoundCount(roundCount);
+
+      if (total === 0) {
+        return {
+          groupName,
+          total,
+          roundCount: cleanRoundCount,
+          courtCount: 0,
+          restPerRound: 0,
+          rounds: [],
+          error: ''
+        };
+      }
+
+      if (total >= 1 && total <= 3) {
+        return {
+          groupName,
+          total,
+          roundCount: cleanRoundCount,
+          courtCount: 0,
+          restPerRound: 0,
+          rounds: [],
+          error: '4名以上で構成して下さい。'
+        };
+      }
+
+      if (total === 7) {
+        return {
+          groupName,
+          total,
+          roundCount: cleanRoundCount,
+          courtCount: 0,
+          restPerRound: 0,
+          rounds: [],
+          error: '7名では対戦表を作成できません。4〜6名、または8〜12名で構成して下さい。'
+        };
+      }
+
+      const schedule = generateSchedule(players, cleanRoundCount);
       return {
         groupName,
         total,
-        blocks,
-        error
+        roundCount: cleanRoundCount,
+        courtCount: schedule.courtCount,
+        restPerRound: schedule.restPerRound,
+        rounds: schedule.rounds,
+        error: ''
       };
+    }
+
+    function generateSchedule(players, roundCount) {
+      const courtCount = Math.min(MAX_COURTS_PER_GROUP, Math.floor(players.length / 4));
+      const restPerRound = players.length - (courtCount * 4);
+      const rounds = [];
+      const stats = createStats(players);
+
+      for (let roundIndex = 0; roundIndex < roundCount; roundIndex++) {
+        const candidate = chooseBestRoundCandidate(players, stats, roundIndex, courtCount, restPerRound);
+        applyRoundStats(candidate, stats);
+        rounds.push({
+          number: roundIndex + 1,
+          rest: candidate.rest,
+          matches: candidate.matches
+        });
+      }
+
+      return { courtCount, restPerRound, rounds };
+    }
+
+    function createStats(players) {
+      const restCounts = {};
+      players.forEach(player => { restCounts[player] = 0; });
+      return {
+        partnerCounts: {},
+        opponentCounts: {},
+        matchupCounts: {},
+        restCounts,
+        lastPartner: {},
+        prevPartner: {},
+        lastOpponents: {},
+        prevOpponents: {},
+        lastRest: new Set(),
+        prevRest: new Set(),
+        lastMatchupKeys: new Set(),
+        prevMatchupKeys: new Set()
+      };
+    }
+
+    function chooseBestRoundCandidate(players, stats, roundIndex, courtCount, restPerRound) {
+      const attempts = Math.max(180, players.length * 26);
+      const top = [];
+
+      for (let i = 0; i < attempts; i++) {
+        const candidate = buildRoundCandidate(players, stats, courtCount, restPerRound);
+        candidate.score = scoreRoundCandidate(candidate, stats, roundIndex);
+        insertTopCandidate(top, candidate, 6);
+      }
+
+      const take = top.slice(0, Math.min(3, top.length));
+      return take[secureRandomInt(take.length)] || top[0] || buildRoundCandidate(players, stats, courtCount, restPerRound);
+    }
+
+    function buildRoundCandidate(players, stats, courtCount, restPerRound) {
+      const rest = pickRestPlayers(players, restPerRound, stats);
+      const restSet = new Set(rest);
+      const active = shuffle(players.filter(player => !restSet.has(player)));
+      const matches = [];
+
+      for (let i = 0; i < courtCount; i++) {
+        const quartet = active.slice(i * 4, (i + 1) * 4);
+        matches.push(buildMatchFromQuartet(quartet, i + 1, stats));
+      }
+
+      return { rest, matches };
+    }
+
+    function pickRestPlayers(players, restPerRound, stats) {
+      if (restPerRound <= 0) return [];
+      const ranked = shuffle(players).sort((a, b) => {
+        const aScore = (stats.restCounts[a] || 0) + (stats.lastRest.has(a) ? 2.5 : 0) + (stats.prevRest.has(a) ? 0.7 : 0);
+        const bScore = (stats.restCounts[b] || 0) + (stats.lastRest.has(b) ? 2.5 : 0) + (stats.prevRest.has(b) ? 0.7 : 0);
+        return aScore - bScore;
+      });
+      const pool = ranked.slice(0, Math.min(ranked.length, restPerRound + 3));
+      return shuffle(pool).slice(0, restPerRound).sort((a, b) => a.localeCompare(b, 'ja'));
+    }
+
+    function buildMatchFromQuartet(quartet, courtNumber, stats) {
+      const pairings = [
+        { teamA: [quartet[0], quartet[1]], teamB: [quartet[2], quartet[3]] },
+        { teamA: [quartet[0], quartet[2]], teamB: [quartet[1], quartet[3]] },
+        { teamA: [quartet[0], quartet[3]], teamB: [quartet[1], quartet[2]] }
+      ].map(match => ({ ...match, court: courtNumber }));
+
+      const scored = pairings.map(match => ({
+        match,
+        score: scoreMatch(match, stats) + Math.random() * 0.25
+      })).sort((a, b) => a.score - b.score);
+
+      const take = scored.slice(0, Math.min(2, scored.length));
+      return (take[secureRandomInt(take.length)] || scored[0]).match;
+    }
+
+    function insertTopCandidate(top, candidate, limit) {
+      top.push(candidate);
+      top.sort((a, b) => a.score - b.score);
+      if (top.length > limit) top.length = limit;
+    }
+
+    function scoreRoundCandidate(candidate, stats, roundIndex) {
+      let score = 0;
+
+      for (const player of candidate.rest) {
+        const restCount = stats.restCounts[player] || 0;
+        score += restCount * 24 + restCount * restCount * 10;
+        if (stats.lastRest.has(player)) score += 80;
+        if (stats.prevRest.has(player)) score += 16;
+      }
+
+      candidate.matches.forEach(match => {
+        score += scoreMatch(match, stats);
+      });
+
+      // 少人数時の偏り緩和: 初回は休憩ローテーションができるだけ広がるようにする
+      if (roundIndex > 0) {
+        const uniqueRestCounts = candidate.rest.map(player => stats.restCounts[player] || 0);
+        if (uniqueRestCounts.length) {
+          const max = Math.max(...uniqueRestCounts);
+          const min = Math.min(...uniqueRestCounts);
+          score += (max - min) * 6;
+        }
+      }
+
+      return score;
+    }
+
+    function scoreMatch(match, stats) {
+      let score = 0;
+      const [a, b] = match.teamA;
+      const [c, d] = match.teamB;
+      const teamPairs = [[a, b], [c, d]];
+      const matchup = matchupKey(match);
+
+      for (const [p1, p2] of teamPairs) {
+        const key = pairKey(p1, p2);
+        const count = stats.partnerCounts[key] || 0;
+        score += count * 48 + count * count * 20;
+        if (stats.lastPartner[p1] === p2 || stats.lastPartner[p2] === p1) score += 160;
+        if (stats.prevPartner[p1] === p2 || stats.prevPartner[p2] === p1) score += 42;
+      }
+
+      for (const [p1, p2] of [[a, c], [a, d], [b, c], [b, d]]) {
+        const key = pairKey(p1, p2);
+        const count = stats.opponentCounts[key] || 0;
+        score += count * 10 + count * count * 5;
+        if ((stats.lastOpponents[p1] || []).includes(p2)) score += 22;
+        if ((stats.prevOpponents[p1] || []).includes(p2)) score += 7;
+      }
+
+      score += (stats.matchupCounts[matchup] || 0) * 72;
+      if (stats.lastMatchupKeys.has(matchup)) score += 190;
+      if (stats.prevMatchupKeys.has(matchup)) score += 55;
+      return score;
+    }
+
+    function applyRoundStats(candidate, stats) {
+      const nextLastPartner = {};
+      const nextLastOpponents = {};
+      const nextLastRest = new Set(candidate.rest);
+      const nextMatchupKeys = new Set();
+
+      stats.prevPartner = { ...stats.lastPartner };
+      stats.prevOpponents = cloneOpponentMap(stats.lastOpponents);
+      stats.prevRest = new Set(stats.lastRest);
+      stats.prevMatchupKeys = new Set(stats.lastMatchupKeys);
+
+      for (const player of candidate.rest) {
+        stats.restCounts[player] = (stats.restCounts[player] || 0) + 1;
+      }
+
+      candidate.matches.forEach(match => {
+        const [a, b] = match.teamA;
+        const [c, d] = match.teamB;
+
+        incrementCount(stats.partnerCounts, pairKey(a, b));
+        incrementCount(stats.partnerCounts, pairKey(c, d));
+
+        [[a, c], [a, d], [b, c], [b, d]].forEach(([p1, p2]) => {
+          incrementCount(stats.opponentCounts, pairKey(p1, p2));
+        });
+
+        const matchup = matchupKey(match);
+        incrementCount(stats.matchupCounts, matchup);
+        nextMatchupKeys.add(matchup);
+
+        nextLastPartner[a] = b;
+        nextLastPartner[b] = a;
+        nextLastPartner[c] = d;
+        nextLastPartner[d] = c;
+
+        nextLastOpponents[a] = [c, d];
+        nextLastOpponents[b] = [c, d];
+        nextLastOpponents[c] = [a, b];
+        nextLastOpponents[d] = [a, b];
+      });
+
+      stats.lastPartner = nextLastPartner;
+      stats.lastOpponents = nextLastOpponents;
+      stats.lastRest = nextLastRest;
+      stats.lastMatchupKeys = nextMatchupKeys;
+    }
+
+    function cloneOpponentMap(input) {
+      const copy = {};
+      for (const key of Object.keys(input || {})) {
+        copy[key] = Array.isArray(input[key]) ? [...input[key]] : [];
+      }
+      return copy;
+    }
+
+    function incrementCount(map, key) {
+      map[key] = (map[key] || 0) + 1;
+    }
+
+    function pairKey(a, b) {
+      return [a, b].sort((x, y) => x.localeCompare(y, 'ja')).join('||');
+    }
+
+    function matchupKey(match) {
+      const team1 = [...match.teamA].sort((a, b) => a.localeCompare(b, 'ja')).join('&');
+      const team2 = [...match.teamB].sort((a, b) => a.localeCompare(b, 'ja')).join('&');
+      return [team1, team2].sort((a, b) => a.localeCompare(b, 'ja')).join(' vs ');
     }
 
     function shuffle(values) {
@@ -763,69 +1152,108 @@
       for (const result of results) {
         const card = document.createElement('section');
         card.className = 'result-card';
+        card.dataset.group = result.groupName;
 
         const head = document.createElement('div');
         head.className = 'result-group-head';
+
+        const titleWrap = document.createElement('div');
         const h3 = document.createElement('h3');
         h3.textContent = result.groupName;
         const count = document.createElement('div');
         count.className = 'count-text';
-        count.textContent = result.error ? `${result.total}名 / 人数エラー` : `${result.total}名 / ${formatBlockSummary(result.blocks)}`;
-        head.append(h3, count);
+        count.textContent = formatResultMeta(result);
+        titleWrap.append(h3, count);
 
-        const blocks = document.createElement('div');
-        blocks.className = 'blocks';
+        const actions = document.createElement('div');
+        actions.className = 'result-actions';
+        if (!result.error && result.rounds.length > 0) {
+          const imgBtn = document.createElement('button');
+          imgBtn.type = 'button';
+          imgBtn.className = 'secondary small';
+          imgBtn.textContent = '画像出力';
+          imgBtn.addEventListener('click', () => exportResultImage(result, createdAt));
+          actions.appendChild(imgBtn);
+        }
+
+        head.append(titleWrap, actions);
+
+        const grid = document.createElement('div');
+        grid.className = 'schedule-grid';
 
         if (result.error) {
           const error = document.createElement('div');
           error.className = 'empty-result error-result';
           error.textContent = result.error;
-          blocks.appendChild(error);
-        } else if (result.blocks.length === 0) {
+          grid.appendChild(error);
+        } else if (result.total === 0) {
           const empty = document.createElement('div');
           empty.className = 'empty-result';
           empty.textContent = '登録メンバーがいません。';
-          blocks.appendChild(empty);
+          grid.appendChild(empty);
+        } else {
+          result.rounds.forEach(round => {
+            grid.appendChild(createRoundCard(round));
+          });
         }
 
-        result.blocks.forEach((members, idx) => {
-          blocks.appendChild(createMemberBlock(`第${idx + 1}組（${members.length}名）`, members, false));
-        });
-
-        card.append(head, blocks);
+        card.append(head, grid);
         els.resultArea.appendChild(card);
       }
     }
 
-    function formatBlockSummary(blocks) {
-      if (!blocks.length) return '未作成';
-      return blocks.map(members => `${members.length}名`).join(' + ');
-    }
+    function createRoundCard(round) {
+      const roundCard = document.createElement('div');
+      roundCard.className = 'round-card';
 
-    function createMemberBlock(title, members, isRemainder) {
-      const block = document.createElement('div');
-      block.className = `block${isRemainder ? ' remainder' : ''}`;
+      const title = document.createElement('div');
+      title.className = 'round-title';
+      title.textContent = `第${round.number}試合`;
 
-      const titleEl = document.createElement('div');
-      titleEl.className = 'block-title';
-      titleEl.textContent = title;
+      const rest = document.createElement('div');
+      rest.className = 'rest-text';
+      rest.textContent = `休憩：${round.rest.length ? round.rest.join('、') : 'なし'}`;
 
-      const list = document.createElement('ol');
-      list.className = 'member-list';
-      members.forEach(member => {
-        const li = document.createElement('li');
-        li.className = 'member';
-        li.textContent = member;
-        list.appendChild(li);
+      roundCard.append(title, rest);
+
+      round.matches.forEach(match => {
+        const panel = document.createElement('div');
+        panel.className = 'court-panel';
+
+        const label = document.createElement('div');
+        label.className = 'court-label';
+        label.textContent = `Court ${match.court}`;
+
+        const topTeam = document.createElement('div');
+        topTeam.className = 'team-box';
+        topTeam.textContent = match.teamA.join('・');
+
+        const vs = document.createElement('div');
+        vs.className = 'vs';
+        vs.textContent = 'VS';
+
+        const bottomTeam = document.createElement('div');
+        bottomTeam.className = 'team-box';
+        bottomTeam.textContent = match.teamB.join('・');
+
+        panel.append(label, topTeam, vs, bottomTeam);
+        roundCard.appendChild(panel);
       });
 
-      block.append(titleEl, list);
-      return block;
+      return roundCard;
+    }
+
+    function formatResultMeta(result) {
+      if (result.error) return `${result.total}名 / 人数エラー`;
+      if (result.total === 0) return '未作成';
+      const courtLabel = result.courtCount === MAX_COURTS_PER_GROUP ? `${result.courtCount}コート` : `${result.courtCount}コート`;
+      const restLabel = result.restPerRound > 0 ? ` / 毎試合${result.restPerRound}名休憩` : '';
+      return `${result.total}名 / ${result.roundCount}試合 / ${courtLabel}${restLabel}`;
     }
 
     function buildResultText(results, createdAt) {
       const lines = [];
-      lines.push(`バドミントン ランダム組分け（${formatDateTime(createdAt)}）`);
+      lines.push(`GZB ランダム対戦表（${formatDateTime(createdAt)}）`);
       for (const result of results) {
         lines.push('');
         lines.push(`【${result.groupName}】${result.total}名`);
@@ -833,11 +1261,15 @@
           lines.push(`エラー：${result.error}`);
           continue;
         }
-        if (result.blocks.length === 0) {
+        if (!result.rounds.length) {
           lines.push('登録メンバーなし');
+          continue;
         }
-        result.blocks.forEach((members, idx) => {
-          lines.push(`第${idx + 1}組（${members.length}名）：${members.join('、')}`);
+        result.rounds.forEach(round => {
+          lines.push(`第${round.number}試合 / 休憩：${round.rest.length ? round.rest.join('、') : 'なし'}`);
+          round.matches.forEach(match => {
+            lines.push(` Court ${match.court}: ${match.teamA.join('・')} VS ${match.teamB.join('・')}`);
+          });
         });
       }
       return lines.join('\n');
@@ -845,12 +1277,12 @@
 
     async function copyResult() {
       if (!state.lastResultText) {
-        showStatus('コピーできる結果がまだありません。先に組分けを作成してください。', 'error');
+        showStatus('テキスト出力できる結果がまだありません。先に対戦表を作成してください。', 'error');
         return;
       }
       try {
         await navigator.clipboard.writeText(state.lastResultText);
-        showStatus('結果をコピーしました。LINEやメモに貼り付けできます。', 'ok');
+        showStatus('結果テキストをコピーしました。LINEやメモに貼り付けできます。', 'ok');
       } catch (e) {
         fallbackCopy(state.lastResultText);
       }
@@ -866,28 +1298,30 @@
       textarea.select();
       const ok = document.execCommand('copy');
       document.body.removeChild(textarea);
-      showStatus(ok ? '結果をコピーしました。' : 'コピーに失敗しました。', ok ? 'ok' : 'error');
+      showStatus(ok ? '結果テキストをコピーしました。' : 'コピーに失敗しました。', ok ? 'ok' : 'error');
     }
 
     function exportJson() {
       readInputsToState();
       saveGroups(state.groups);
+      saveSettings(state.settings);
       const payload = {
-        app: 'badminton-six-person-groups',
+        app: 'gzb-random-match-table',
         version: 1,
         exportedAt: new Date().toISOString(),
+        settings: { roundCount: state.settings.roundCount },
         groups: normalizeGroups(state.groups)
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `badminton-members-${dateStamp(new Date())}.json`;
+      a.download = `gzb-match-members-${dateStamp(new Date())}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      showStatus('名簿JSONを書き出しました。', 'ok');
+      showStatus('名簿バックアップを書き出しました。', 'ok');
     }
 
     function importJson(event) {
@@ -899,10 +1333,15 @@
           const parsed = JSON.parse(String(reader.result || '{}'));
           const groups = parsed.groups || parsed;
           state.groups = normalizeGroups(groups);
+          if (parsed.settings && typeof parsed.settings === 'object') {
+            state.settings.roundCount = normalizeRoundCount(parsed.settings.roundCount);
+            els.roundCountInput.value = String(state.settings.roundCount);
+            saveSettings(state.settings);
+          }
           saveGroups(state.groups);
           renderGroups();
           clearResult();
-          showStatus('名簿JSONを取り込みました。', 'ok');
+          showStatus('名簿を復元しました。', 'ok');
         } catch (e) {
           showStatus('JSONの読み込みに失敗しました。', 'error');
         } finally {
@@ -912,10 +1351,82 @@
       reader.readAsText(file);
     }
 
-    function clearResult() {
+    function normalizeResult(result) {
+      if (!result || typeof result !== 'object' || !GROUP_NAMES.includes(result.groupName)) return null;
+      const rounds = Array.isArray(result.rounds) ? result.rounds.map(round => ({
+        number: Number.isFinite(Number(round.number)) ? Number(round.number) : 0,
+        rest: Array.isArray(round.rest) ? round.rest.map(v => String(v ?? '').trim()).filter(Boolean) : [],
+        matches: Array.isArray(round.matches) ? round.matches.map(match => ({
+          court: Number.isFinite(Number(match.court)) ? Number(match.court) : 1,
+          teamA: Array.isArray(match.teamA) ? match.teamA.map(v => String(v ?? '').trim()).filter(Boolean).slice(0, 2) : [],
+          teamB: Array.isArray(match.teamB) ? match.teamB.map(v => String(v ?? '').trim()).filter(Boolean).slice(0, 2) : []
+        })).filter(match => match.teamA.length === 2 && match.teamB.length === 2) : []
+      })) : [];
+
+      return {
+        groupName: result.groupName,
+        total: Number.isFinite(Number(result.total)) ? Number(result.total) : 0,
+        roundCount: normalizeRoundCount(result.roundCount),
+        courtCount: Number.isFinite(Number(result.courtCount)) ? Number(result.courtCount) : 0,
+        restPerRound: Number.isFinite(Number(result.restPerRound)) ? Number(result.restPerRound) : 0,
+        rounds,
+        error: String(result.error || '')
+      };
+    }
+
+    function saveLastResult(results, createdAt, text) {
+      const payload = {
+        version: 1,
+        savedAt: new Date().toISOString(),
+        createdAt: createdAt.toISOString(),
+        text: String(text || ''),
+        results: results.map(normalizeResult).filter(Boolean)
+      };
+      window.localStorage.setItem(RESULT_STORAGE_KEY, JSON.stringify(payload));
+    }
+
+    function loadLastResult() {
+      try {
+        const saved = window.localStorage.getItem(RESULT_STORAGE_KEY);
+        if (!saved) return null;
+        const parsed = JSON.parse(saved);
+        const createdAt = new Date(parsed.createdAt || parsed.savedAt || '');
+        const results = Array.isArray(parsed.results) ? parsed.results.map(normalizeResult).filter(Boolean) : [];
+        if (!results.length || Number.isNaN(createdAt.getTime())) return null;
+        return {
+          createdAt,
+          results,
+          text: String(parsed.text || '')
+        };
+      } catch (e) {
+        console.warn(e);
+        return null;
+      }
+    }
+
+    function restoreLastResult() {
+      const saved = loadLastResult();
+      if (!saved) {
+        clearResult(false);
+        return;
+      }
+      state.lastResults = saved.results;
+      state.lastCreatedAt = saved.createdAt;
+      state.lastResultText = saved.text || buildResultText(saved.results, saved.createdAt);
+      renderResults(saved.results, saved.createdAt);
+    }
+
+    function clearSavedResult() {
+      window.localStorage.removeItem(RESULT_STORAGE_KEY);
+    }
+
+    function clearResult(removeSaved = true) {
+      state.lastResults = [];
+      state.lastCreatedAt = null;
       state.lastResultText = '';
+      if (removeSaved) clearSavedResult();
       els.resultDate.textContent = '未作成';
-      els.resultArea.innerHTML = '<div class="empty-result">まだ結果がありません。「全グループ作成」を押してください。</div>';
+      els.resultArea.innerHTML = '<div class="empty-result">まだ結果がありません。「全対戦表作成」を押してください。</div>';
     }
 
     function showStatus(message, type = '', timeout = 2600) {
@@ -931,20 +1442,163 @@
     }
 
     function formatDateTime(date) {
-      return new Intl.DateTimeFormat('ja-JP', {
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit',
-        hour12: false
-      }).format(date);
+      const d = new Date(date);
+      if (Number.isNaN(d.getTime())) return '未作成';
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const h = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      return `${y}/${m}/${day} ${h}:${min}`;
     }
 
     function dateStamp(date) {
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const d = String(date.getDate()).padStart(2, '0');
-      const h = String(date.getHours()).padStart(2, '0');
-      const min = String(date.getMinutes()).padStart(2, '0');
-      return `${y}${m}${d}-${h}${min}`;
+      const d = new Date(date);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const h = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      return `${y}${m}${day}-${h}${min}`;
+    }
+
+    function escapeXml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    async function exportAllResultImages() {
+      const results = Array.isArray(state.lastResults) ? state.lastResults : [];
+      const targets = results.filter(result => !result.error && result.rounds && result.rounds.length > 0);
+
+      if (!targets.length || !state.lastCreatedAt) {
+        showStatus('画像出力できる対戦表がまだありません。先に対戦表を作成してください。', 'error');
+        return;
+      }
+
+      showStatus('対戦表画像を出力しています。', 'ok', 1800);
+
+      for (const result of targets) {
+        await exportResultImage(result, state.lastCreatedAt, { silent: true });
+        await wait(350);
+      }
+
+      showStatus(`対戦表画像を${targets.length}件出力しました。`, 'ok');
+    }
+
+    function wait(ms) {
+      return new Promise(resolve => window.setTimeout(resolve, ms));
+    }
+
+    async function exportResultImage(result, createdAt, options = {}) {
+      return new Promise((resolve, reject) => {
+        try {
+          const svgInfo = buildScheduleSvg(result, createdAt);
+          const blob = new Blob([svgInfo.svg], { type: 'image/svg+xml;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const img = new Image();
+
+          img.onload = () => {
+            const scale = 2;
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(svgInfo.width * scale);
+            canvas.height = Math.round(svgInfo.height * scale);
+
+            const ctx = canvas.getContext('2d');
+            ctx.scale(scale, scale);
+            ctx.fillStyle = '#f7fbff';
+            ctx.fillRect(0, 0, svgInfo.width, svgInfo.height);
+            ctx.drawImage(img, 0, 0, svgInfo.width, svgInfo.height);
+
+            canvas.toBlob(downloadBlob => {
+              URL.revokeObjectURL(url);
+
+              if (!downloadBlob) {
+                if (!options.silent) showStatus('画像の作成に失敗しました。', 'error');
+                reject(new Error('画像の作成に失敗しました。'));
+                return;
+              }
+
+              const link = document.createElement('a');
+              link.href = URL.createObjectURL(downloadBlob);
+              link.download = `${result.groupName}-${dateStamp(createdAt)}.png`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(link.href);
+
+              if (!options.silent) {
+                showStatus(`${result.groupName} の対戦表画像を保存しました。`, 'ok');
+              }
+              resolve();
+            }, 'image/png');
+          };
+
+          img.onerror = () => {
+            URL.revokeObjectURL(url);
+            if (!options.silent) showStatus('画像の作成に失敗しました。', 'error');
+            reject(new Error('画像の作成に失敗しました。'));
+          };
+
+          img.src = url;
+        } catch (e) {
+          console.warn(e);
+          if (!options.silent) showStatus('画像の作成に失敗しました。', 'error');
+          reject(e);
+        }
+      });
+    }
+
+    function buildScheduleSvg(result, createdAt) {
+      const cols = 3;
+      const gap = 22;
+      const outerPad = 24;
+      const cardWidth = 340;
+      const courtBlockHeight = 196;
+      const cardTopHeight = 84;
+      const cardHeight = cardTopHeight + (result.courtCount * courtBlockHeight) + 12;
+      const rows = Math.ceil(result.rounds.length / cols);
+      const width = (outerPad * 2) + (cardWidth * cols) + (gap * (cols - 1));
+      const titleHeight = 78;
+      const height = (outerPad * 2) + titleHeight + (rows * cardHeight) + (Math.max(0, rows - 1) * gap);
+      const parts = [];
+
+      parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`);
+      parts.push('<rect width="100%" height="100%" fill="#f7fbff"/>');
+      parts.push(`<text x="${outerPad}" y="${outerPad + 24}" font-size="28" font-weight="800" fill="#1f3b74">${escapeXml(result.groupName)} 対戦表</text>`);
+      parts.push(`<text x="${outerPad}" y="${outerPad + 54}" font-size="14" fill="#5d6778">${escapeXml(formatResultMeta(result))} / 作成 ${escapeXml(formatDateTime(createdAt))}</text>`);
+
+      result.rounds.forEach((round, index) => {
+        const col = index % cols;
+        const row = Math.floor(index / cols);
+        const x = outerPad + (cardWidth + gap) * col;
+        const y = outerPad + titleHeight + (cardHeight + gap) * row;
+
+        parts.push(`<rect x="${x}" y="${y}" width="${cardWidth}" height="${cardHeight}" rx="20" fill="#ffffff" stroke="#dbe5f0" stroke-width="2"/>`);
+        parts.push(`<rect x="${x + 18}" y="${y + 12}" width="${cardWidth - 36}" height="34" rx="12" fill="#e9efff"/>`);
+        parts.push(`<text x="${x + (cardWidth / 2)}" y="${y + 35}" font-size="16" font-weight="800" fill="#2f4da8" text-anchor="middle">第${round.number}試合</text>`);
+        parts.push(`<text x="${x + (cardWidth / 2)}" y="${y + 62}" font-size="14" fill="#5d6778" text-anchor="middle">休憩：${escapeXml(round.rest.length ? round.rest.join('、') : 'なし')}</text>`);
+
+        round.matches.forEach((match, courtIndex) => {
+          const panelY = y + 78 + (courtIndex * courtBlockHeight);
+          parts.push(`<rect x="${x + 16}" y="${panelY}" width="${cardWidth - 32}" height="${courtBlockHeight - 12}" rx="16" fill="#f6f9ff" stroke="#e4eaf6"/>`);
+          parts.push(`<rect x="${x + 100}" y="${panelY + 12}" width="${cardWidth - 200}" height="28" rx="14" fill="#eaf1ff"/>`);
+          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 31}" font-size="14" font-weight="800" fill="#38529c" text-anchor="middle">Court ${match.court}</text>`);
+
+          parts.push(`<rect x="${x + 28}" y="${panelY + 54}" width="${cardWidth - 56}" height="54" rx="12" fill="#ffffff" stroke="#e8edf6"/>`);
+          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 88}" font-size="18" font-weight="800" fill="#1f2937" text-anchor="middle">${escapeXml(match.teamA.join('・'))}</text>`);
+          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 130}" font-size="18" font-weight="900" fill="#5d6778" text-anchor="middle">VS</text>`);
+          parts.push(`<rect x="${x + 28}" y="${panelY + 142}" width="${cardWidth - 56}" height="54" rx="12" fill="#ffffff" stroke="#e8edf6"/>`);
+          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 176}" font-size="18" font-weight="800" fill="#1f2937" text-anchor="middle">${escapeXml(match.teamB.join('・'))}</text>`);
+        });
+      });
+
+      parts.push('</svg>');
+      return { svg: parts.join(''), width, height };
     }
 
     function registerServiceWorker() {

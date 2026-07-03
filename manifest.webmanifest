@@ -1,7 +1,7 @@
 {
-  "name": "GZB ランダム組み分け",
-  "short_name": "GZB",
-  "description": "バドミントンダブルス用に、各グループから最大6名を目安に均等な組をランダム作成するアプリです。",
+  "name": "GZB クラス別 ランダム対戦表",
+  "short_name": "GZB対戦表",
+  "description": "バドミントンダブルス用に、各クラス最大2コートのランダム対戦表を作成するアプリです。",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
