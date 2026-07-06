@@ -39,7 +39,7 @@
       margin: 0;
       color: var(--ink);
       background: linear-gradient(180deg, #eff7f4 0%, var(--bg) 220px);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+      font-family: "Noto Sans JP", "Noto Sans SC", "PingFang SC", "Hiragino Sans", "Yu Gothic", "Microsoft YaHei", "Segoe UI", Meiryo, sans-serif;
       line-height: 1.55;
     }
 
@@ -425,11 +425,11 @@
     .round-card {
       flex: 0 0 min(82vw, 320px);
       scroll-snap-align: start;
-      border: 3px solid #1f6b55;
+      border: 4px solid #0c8a53;
       border-radius: 18px;
       padding: 10px;
       background: #fff;
-      box-shadow: 0 4px 12px rgba(20, 107, 85, .08);
+      box-shadow: 0 6px 14px rgba(12, 138, 83, .14);
     }
     .round-title {
       display: block;
@@ -2080,21 +2080,32 @@
     function buildScheduleSvg(result, createdAt) {
       const cols = 3;
       const gap = 28;
-      const outerPad = 30;
+      const outerPad = 32;
       const cardWidth = 500;
-      const courtBlockHeight = 220;
-      const cardTopHeight = 82;
-      const cardHeight = cardTopHeight + (result.courtCount * courtBlockHeight) + 14;
+      const courtBlockHeight = 236;
+      const cardTopHeight = 84;
+      const cardHeight = cardTopHeight + (result.courtCount * courtBlockHeight) + 16;
       const rows = Math.ceil(result.rounds.length / cols);
       const width = (outerPad * 2) + (cardWidth * cols) + (gap * (cols - 1));
-      const titleHeight = 90;
+      const titleHeight = 92;
       const height = (outerPad * 2) + titleHeight + (rows * cardHeight) + (Math.max(0, rows - 1) * gap);
       const parts = [];
+      const fontStack = '"Noto Sans JP","Noto Sans SC","PingFang SC","Hiragino Sans","Yu Gothic","Microsoft YaHei",sans-serif';
 
       parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`);
+      parts.push('<defs><style>' +
+        `text{font-family:${fontStack};}` +
+        '.shadowText{fill:rgba(0,0,0,0.14);}' +
+        '.titleText{fill:#23407f;font-weight:800;}' +
+        '.metaText{fill:#5d6778;}' +
+        '.roundLabel{fill:#2f4da8;font-weight:800;}' +
+        '.courtText{fill:#38529c;font-weight:800;paint-order:stroke fill;stroke:#ffffff;stroke-width:3;}' +
+        '.teamText{fill:#1d2b24;font-weight:800;paint-order:stroke fill;stroke:#ffffff;stroke-width:4;letter-spacing:0.01em;}' +
+        '.vsText{fill:#55606e;font-weight:900;paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5;}' +
+      '</style></defs>');
       parts.push('<rect width="100%" height="100%" fill="#f7fbff"/>');
-      parts.push(`<text x="${outerPad}" y="${outerPad + 28}" font-size="34" font-weight="800" fill="#23407f">${escapeXml(result.groupName)} 対戦表</text>`);
-      parts.push(`<text x="${outerPad}" y="${outerPad + 66}" font-size="19" fill="#5d6778">${escapeXml(formatResultMeta(result))} / 作成 ${escapeXml(formatDateTime(createdAt))}</text>`);
+      parts.push(`<text x="${outerPad}" y="${outerPad + 30}" font-size="35" class="titleText">${escapeXml(result.groupName)} 対戦表</text>`);
+      parts.push(`<text x="${outerPad}" y="${outerPad + 70}" font-size="20" class="metaText">${escapeXml(formatResultMeta(result))} / 作成 ${escapeXml(formatDateTime(createdAt))}</text>`);
 
       result.rounds.forEach((round, index) => {
         const col = index % cols;
@@ -2105,29 +2116,32 @@
         const panelInset = 18;
         const panelWidth = cardWidth - (panelInset * 2);
         const panelHeight = courtBlockHeight - 12;
-        const panelYBase = y + 74;
+        const panelYBase = y + 76;
         const teamBoxWidth = cardWidth - 78;
         const teamBoxX = x + 39;
-        const teamBoxHeight = 46;
-        const courtLabelWidth = 160;
+        const teamBoxHeight = 50;
+        const courtLabelWidth = 170;
         const courtLabelX = x + ((cardWidth - courtLabelWidth) / 2);
 
-        parts.push(`<rect x="${x}" y="${y}" width="${cardWidth}" height="${cardHeight}" rx="22" fill="#ffffff" stroke="#1f6b55" stroke-width="4"/>`);
-        parts.push(`<rect x="${x + 22}" y="${y + 14}" width="${cardWidth - 44}" height="36" rx="12" fill="#edf3ff"/>`);
-        parts.push(`<text x="${x + (cardWidth / 2)}" y="${y + 39}" font-size="19" font-weight="800" fill="#2f4da8" text-anchor="middle">第${round.number}試合</text>`);
-        parts.push(`<text x="${x + (cardWidth / 2)}" y="${y + 67}" font-size="17" fill="#5d6778" text-anchor="middle">休憩：${escapeXml(round.rest.length ? round.rest.join('、') : 'なし')}</text>`);
+        parts.push(`<rect x="${x}" y="${y}" width="${cardWidth}" height="${cardHeight}" rx="22" fill="#ffffff" stroke="#0c8a53" stroke-width="7"/>`);
+        parts.push(`<rect x="${x + 22}" y="${y + 14}" width="${cardWidth - 44}" height="38" rx="12" fill="#edf3ff"/>`);
+        parts.push(`<text x="${x + (cardWidth / 2)}" y="${y + 40}" font-size="20" class="roundLabel" text-anchor="middle">第${round.number}試合</text>`);
+        parts.push(`<text x="${x + (cardWidth / 2)}" y="${y + 70}" font-size="18" class="metaText" text-anchor="middle">休憩：${escapeXml(round.rest.length ? round.rest.join('、') : 'なし')}</text>`);
 
         round.matches.forEach((match, courtIndex) => {
           const panelY = panelYBase + (courtIndex * courtBlockHeight);
           parts.push(`<rect x="${x + panelInset}" y="${panelY}" width="${panelWidth}" height="${panelHeight}" rx="16" fill="#f7f9ff" stroke="#d6e4f5" stroke-width="1.5"/>`);
-          parts.push(`<rect x="${courtLabelX}" y="${panelY + 14}" width="${courtLabelWidth}" height="30" rx="14" fill="#eaf1ff"/>`);
-          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 34}" font-size="19" font-weight="800" fill="#38529c" text-anchor="middle">${escapeXml(match.courtName || `Court ${match.court}`)}</text>`);
+          parts.push(`<rect x="${courtLabelX}" y="${panelY + 14}" width="${courtLabelWidth}" height="32" rx="15" fill="#eaf1ff"/>`);
+          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 36}" font-size="21" class="courtText" text-anchor="middle">${escapeXml(match.courtName || `Court ${match.court}`)}</text>`);
 
-          parts.push(`<rect x="${teamBoxX}" y="${panelY + 58}" width="${teamBoxWidth}" height="${teamBoxHeight}" rx="12" fill="#ffffff" stroke="#e8edf6"/>`);
-          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 81}" font-size="22" font-weight="800" fill="#1f2937" text-anchor="middle" dominant-baseline="middle">${escapeXml(match.teamA.join('・'))}</text>`);
-          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 129}" font-size="19" font-weight="900" fill="#5d6778" text-anchor="middle" dominant-baseline="middle">VS</text>`);
-          parts.push(`<rect x="${teamBoxX}" y="${panelY + 142}" width="${teamBoxWidth}" height="${teamBoxHeight}" rx="12" fill="#ffffff" stroke="#e8edf6"/>`);
-          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 165}" font-size="22" font-weight="800" fill="#1f2937" text-anchor="middle" dominant-baseline="middle">${escapeXml(match.teamB.join('・'))}</text>`);
+          parts.push(`<rect x="${teamBoxX}" y="${panelY + 64}" width="${teamBoxWidth}" height="${teamBoxHeight}" rx="12" fill="#ffffff" stroke="#e8edf6"/>`);
+          parts.push(`<text x="${x + (cardWidth / 2) + 1}" y="${panelY + 90}" font-size="25" class="shadowText" text-anchor="middle" dominant-baseline="middle">${escapeXml(match.teamA.join('・'))}</text>`);
+          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 89}" font-size="25" class="teamText" text-anchor="middle" dominant-baseline="middle">${escapeXml(match.teamA.join('・'))}</text>`);
+          parts.push(`<text x="${x + (cardWidth / 2) + 1}" y="${panelY + 143}" font-size="21" class="shadowText" text-anchor="middle" dominant-baseline="middle">VS</text>`);
+          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 142}" font-size="21" class="vsText" text-anchor="middle" dominant-baseline="middle">VS</text>`);
+          parts.push(`<rect x="${teamBoxX}" y="${panelY + 156}" width="${teamBoxWidth}" height="${teamBoxHeight}" rx="12" fill="#ffffff" stroke="#e8edf6"/>`);
+          parts.push(`<text x="${x + (cardWidth / 2) + 1}" y="${panelY + 182}" font-size="25" class="shadowText" text-anchor="middle" dominant-baseline="middle">${escapeXml(match.teamB.join('・'))}</text>`);
+          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 181}" font-size="25" class="teamText" text-anchor="middle" dominant-baseline="middle">${escapeXml(match.teamB.join('・'))}</text>`);
         });
       });
 
