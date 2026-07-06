@@ -324,6 +324,7 @@
       font-weight: 800;
     }
     .court-count-row input,
+    .court-count-row select,
     .court-name-input {
       width: 100%;
       border: 1px solid var(--line);
@@ -1041,15 +1042,19 @@
       label.textContent = '使用コート数';
       label.htmlFor = `${groupName}-court-count`;
 
-      const courtCountInput = document.createElement('input');
+      const courtCountInput = document.createElement('select');
       courtCountInput.id = `${groupName}-court-count`;
-      courtCountInput.type = 'number';
-      courtCountInput.inputMode = 'numeric';
-      courtCountInput.min = '1';
-      courtCountInput.max = String(MAX_COURTS_PER_GROUP);
-      courtCountInput.value = String(current.courtCount);
       courtCountInput.dataset.group = groupName;
       courtCountInput.dataset.courtCount = 'true';
+
+      for (let i = 1; i <= MAX_COURTS_PER_GROUP; i++) {
+        const option = document.createElement('option');
+        option.value = String(i);
+        option.textContent = String(i);
+        courtCountInput.appendChild(option);
+      }
+
+      courtCountInput.value = String(current.courtCount);
 
       courtCountInput.addEventListener('change', () => {
         const next = normalizeCourtCount(courtCountInput.value);
@@ -2105,7 +2110,7 @@
         const panelYBase = y + 70;
         const teamBoxWidth = cardWidth - 72;
         const teamBoxX = x + 36;
-        const teamBoxHeight = 42;
+        const teamBoxHeight = 40;
         const courtLabelWidth = 150;
         const courtLabelX = x + ((cardWidth - courtLabelWidth) / 2);
 
@@ -2118,13 +2123,13 @@
           const panelY = panelYBase + (courtIndex * courtBlockHeight);
           parts.push(`<rect x="${x + panelInset}" y="${panelY}" width="${panelWidth}" height="${panelHeight}" rx="16" fill="#f6f9ff" stroke="#e4eaf6"/>`);
           parts.push(`<rect x="${courtLabelX}" y="${panelY + 12}" width="${courtLabelWidth}" height="28" rx="14" fill="#eaf1ff"/>`);
-          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 31}" font-size="17" font-weight="800" fill="#38529c" text-anchor="middle">${escapeXml(match.courtName || `Court ${match.court}`)}</text>`);
+          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 31}" font-size="18" font-weight="800" fill="#38529c" text-anchor="middle">${escapeXml(match.courtName || `Court ${match.court}`)}</text>`);
 
-          parts.push(`<rect x="${teamBoxX}" y="${panelY + 50}" width="${teamBoxWidth}" height="${teamBoxHeight}" rx="12" fill="#ffffff" stroke="#e8edf6"/>`);
-          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 71}" font-size="21" font-weight="800" fill="#1f2937" text-anchor="middle" dominant-baseline="middle">${escapeXml(match.teamA.join('・'))}</text>`);
-          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 121}" font-size="18" font-weight="900" fill="#5d6778" text-anchor="middle" dominant-baseline="middle">VS</text>`);
-          parts.push(`<rect x="${teamBoxX}" y="${panelY + 130}" width="${teamBoxWidth}" height="${teamBoxHeight}" rx="12" fill="#ffffff" stroke="#e8edf6"/>`);
-          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 151}" font-size="21" font-weight="800" fill="#1f2937" text-anchor="middle" dominant-baseline="middle">${escapeXml(match.teamB.join('・'))}</text>`);
+          parts.push(`<rect x="${teamBoxX}" y="${panelY + 48}" width="${teamBoxWidth}" height="${teamBoxHeight}" rx="12" fill="#ffffff" stroke="#e8edf6"/>`);
+          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 68}" font-size="21" font-weight="800" fill="#1f2937" text-anchor="middle" dominant-baseline="middle">${escapeXml(match.teamA.join('・'))}</text>`);
+          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 110}" font-size="18" font-weight="900" fill="#5d6778" text-anchor="middle" dominant-baseline="middle">VS</text>`);
+          parts.push(`<rect x="${teamBoxX}" y="${panelY + 122}" width="${teamBoxWidth}" height="${teamBoxHeight}" rx="12" fill="#ffffff" stroke="#e8edf6"/>`);
+          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 142}" font-size="21" font-weight="800" fill="#1f2937" text-anchor="middle" dominant-baseline="middle">${escapeXml(match.teamB.join('・'))}</text>`);
         });
       });
 
