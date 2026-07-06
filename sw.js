@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gzb-random-match-pages-v12';
+const CACHE_NAME = 'gzb-random-match-pages-v14';
 const ASSETS = [
   './',
   './index.html',

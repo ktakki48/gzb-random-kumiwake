@@ -307,6 +307,38 @@
     }
     .group-actions { display: flex; align-items: center; gap: 8px; }
     .group-actions .small { min-height: 34px; font-size: 11px; padding: 6px 8px; }
+    .group-config {
+      padding: 8px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfdfc;
+      display: grid;
+      gap: 7px;
+    }
+    .court-count-row {
+      display: grid;
+      grid-template-columns: 1fr 64px;
+      gap: 6px;
+      align-items: center;
+      font-size: 11px;
+      color: var(--primary-2);
+      font-weight: 800;
+    }
+    .court-count-row input,
+    .court-name-input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 6px 8px;
+      font: inherit;
+      font-size: 12px;
+      min-height: 32px;
+      background: #fff;
+    }
+    .court-name-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
 
     .result-head {
       display: flex;
@@ -563,6 +595,9 @@
       input[type="text"] { padding: 10px 12px; font-size: 15px; min-height: 42px; }
       .clear-btn { min-height: 38px; width: 36px; }
       .group-actions .small { min-height: 40px; font-size: 13px; padding: 8px 12px; }
+      .group-config { padding: 10px 14px; }
+      .court-count-row { font-size: 12px; grid-template-columns: 1fr 72px; }
+      .court-name-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .image-output-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .count-text { font-size: 12px; }
       .result-actions button { min-width: 88px; font-size: 14px; }
@@ -593,13 +628,13 @@
   <header>
     <div class="header-inner">
       <h1>GZB クラス別 ランダム対戦表</h1>
-      <p class="lead">A / B1 / B2 / C の各グループから、ランダムなダブルス対戦表を作成します。<br>名簿と前回作成した対戦表は、この端末のブラウザ内に保存されます。</p>
+      <p class="lead">A / B / C / D の各グループから、ランダムなダブルス対戦表を作成します。<br>名簿と前回作成した対戦表は、この端末のブラウザ内に保存されます。</p>
     </div>
   </header>
 
   <main>
     <section class="panel action-panel" aria-label="操作">
-      <p class="notice"><strong>使い方</strong><span>名簿を編集 → 「全対戦表作成」。4〜6名は1コート、8〜12名は2コートで対戦表を作成します。<br>1〜3名と7名は人数エラーです。余りの人は各試合で「休憩」と表示します。</span></p>
+      <p class="notice"><strong>使い方</strong><span>名簿を編集 → 「全対戦表作成」。各グループで使用コート数とコート名を設定し、対戦表を作成します。<br>1〜3名と7名は人数エラーです。余りの人は各試合で「休憩」と表示します。</span></p>
 
       <div class="setting-grid">
         <div class="setting-box">
@@ -646,11 +681,11 @@
     <details>
       <summary>補足・保存仕様</summary>
       <ul class="help-list">
-        <li>各グループは最大12名まで登録できます。</li>
-        <li>4〜6名、8〜12名で対戦表を作成し、1〜3名と7名はエラー表示にします。</li>
-        <li>4〜6名は1コート、8〜12名は2コートで運用し、余り人数は毎試合「休憩」として自動で割り振ります。</li>
+        <li>各グループは最大20名まで登録できます。</li>
+        <li>指定コート数に対して必要人数を満たす場合に対戦表を作成し、1〜3名と7名はエラー表示にします。</li>
+        <li>各グループごとに1〜3コートを指定でき、余り人数は毎試合「休憩」として自動で割り振ります。</li>
         <li>同じペアや似た対戦が連続しにくいよう、偏りを抑えるロジックで作成します。</li>
-        <li>上部の「結果の画像出力」からA・B1・B2・Cを1枚にまとめたセット画像を共有できます。各グループ結果カードの「画像出力」から個別共有もできます。共有シート非対応環境では保存用表示に切り替わります。</li>
+        <li>上部の「結果の画像出力」からA・B・C・Dを1枚にまとめたセット画像を共有できます。各グループ結果カードの「画像出力」から個別共有もできます。共有シート非対応環境では保存用表示に切り替わります。</li>
         <li>名簿は入力中に即時自動保存されます。名簿と前回作成した対戦表はlocalStorageを使用し、同じ端末・同じブラウザ・同じURLで保持されます。</li>
       </ul>
     </details>
@@ -663,15 +698,27 @@
     const GROUP_STORAGE_FALLBACK_KEYS = ['badminton-six-person-groups-v1'];
     const RESULT_STORAGE_KEY = 'gzb-random-match-results-v1';
     const SETTINGS_STORAGE_KEY = 'gzb-random-match-settings-v1';
-    const MAX_MEMBERS = 12;
+    const MAX_MEMBERS = 20;
     const DEFAULT_ROUND_COUNT = 9;
-    const MAX_COURTS_PER_GROUP = 2;
-    const GROUP_NAMES = ['Aグループ', 'B1グループ', 'B2グループ', 'Cグループ'];
+    const MAX_COURTS_PER_GROUP = 3;
+    const GROUP_NAMES = ['Aグループ', 'Bグループ', 'Cグループ', 'Dグループ'];
+    const GROUP_ALIASES = {
+      'Aグループ': ['Aグループ'],
+      'Bグループ': ['Bグループ', 'B1グループ'],
+      'Cグループ': ['Cグループ', 'B2グループ'],
+      'Dグループ': ['Dグループ', '旧Cグループ']
+    };
+    const LEGACY_GROUP_MIGRATION = {
+      'Aグループ': 'Aグループ',
+      'B1グループ': 'Bグループ',
+      'B2グループ': 'Cグループ',
+      'Cグループ': 'Dグループ'
+    };
     const DEFAULT_GROUPS = {
       'Aグループ': [],
-      'B1グループ': [],
-      'B2グループ': [],
-      'Cグループ': []
+      'Bグループ': [],
+      'Cグループ': [],
+      'Dグループ': []
     };
 
     const els = {
@@ -742,15 +789,28 @@
     function emptyGroups() {
       return {
         'Aグループ': [],
-        'B1グループ': [],
-        'B2グループ': [],
-        'Cグループ': []
+        'Bグループ': [],
+        'Cグループ': [],
+        'Dグループ': []
       };
     }
 
     function normalizeGroups(input) {
       const source = input && typeof input === 'object' ? input : DEFAULT_GROUPS;
-      const normalized = {};
+      const normalized = emptyGroups();
+
+      const hasLegacyKeys = ['B1グループ', 'B2グループ'].some(key => Array.isArray(source[key]));
+      if (hasLegacyKeys) {
+        for (const [legacyName, newName] of Object.entries(LEGACY_GROUP_MIGRATION)) {
+          const raw = Array.isArray(source[legacyName]) ? source[legacyName] : [];
+          normalized[newName] = raw
+            .map(v => String(v ?? '').trim())
+            .filter(Boolean)
+            .slice(0, MAX_MEMBERS);
+        }
+        return normalized;
+      }
+
       for (const groupName of GROUP_NAMES) {
         const raw = Array.isArray(source[groupName]) ? source[groupName] : [];
         normalized[groupName] = raw
@@ -794,30 +854,73 @@
 
     function saveGroups(groups) {
       const payload = {
-        version: 1,
+        version: 2,
         savedAt: new Date().toISOString(),
         groups: normalizeGroups(groups)
       };
       window.localStorage.setItem(GROUP_STORAGE_KEY, JSON.stringify(payload));
     }
 
+    function defaultGroupSettings() {
+      const settings = {};
+      for (const groupName of GROUP_NAMES) {
+        settings[groupName] = {
+          courtCount: 1,
+          courtNames: ['Court 1', 'Court 2', 'Court 3']
+        };
+      }
+      return settings;
+    }
+
+    function normalizeGroupSettings(input) {
+      const source = input && typeof input === 'object' ? input : {};
+      const normalized = defaultGroupSettings();
+
+      for (const groupName of GROUP_NAMES) {
+        const raw = source[groupName] || {};
+        const courtCount = normalizeCourtCount(raw.courtCount ?? 1);
+        const courtNames = Array.isArray(raw.courtNames) ? raw.courtNames : [];
+        normalized[groupName] = {
+          courtCount,
+          courtNames: [0, 1, 2].map(index => {
+            const value = String(courtNames[index] ?? '').trim();
+            return value || `Court ${index + 1}`;
+          })
+        };
+      }
+
+      return normalized;
+    }
+
     function loadSettings() {
       try {
         const saved = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
-        if (!saved) return { roundCount: DEFAULT_ROUND_COUNT };
+        if (!saved) {
+          return {
+            roundCount: DEFAULT_ROUND_COUNT,
+            groupSettings: defaultGroupSettings()
+          };
+        }
         const parsed = JSON.parse(saved);
-        return { roundCount: normalizeRoundCount(parsed.roundCount) };
+        return {
+          roundCount: normalizeRoundCount(parsed.roundCount),
+          groupSettings: normalizeGroupSettings(parsed.groupSettings)
+        };
       } catch (e) {
         console.warn(e);
-        return { roundCount: DEFAULT_ROUND_COUNT };
+        return {
+          roundCount: DEFAULT_ROUND_COUNT,
+          groupSettings: defaultGroupSettings()
+        };
       }
     }
 
     function saveSettings(settings) {
       const payload = {
-        version: 1,
+        version: 2,
         savedAt: new Date().toISOString(),
-        roundCount: normalizeRoundCount(settings.roundCount)
+        roundCount: normalizeRoundCount(settings.roundCount),
+        groupSettings: normalizeGroupSettings(settings.groupSettings)
       };
       window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(payload));
     }
@@ -825,6 +928,18 @@
     function normalizeRoundCount(value) {
       const num = Math.max(1, Math.min(20, Number.parseInt(value, 10) || DEFAULT_ROUND_COUNT));
       return num;
+    }
+
+    function normalizeCourtCount(value) {
+      return Math.max(1, Math.min(MAX_COURTS_PER_GROUP, Number.parseInt(value, 10) || 1));
+    }
+
+    function getGroupSetting(groupName) {
+      if (!state.settings.groupSettings) {
+        state.settings.groupSettings = defaultGroupSettings();
+      }
+      state.settings.groupSettings = normalizeGroupSettings(state.settings.groupSettings);
+      return state.settings.groupSettings[groupName] || defaultGroupSettings()[groupName];
     }
 
     function renderGroups() {
@@ -848,7 +963,7 @@
         title.appendChild(badge);
         const meta = document.createElement('p');
         meta.className = 'group-meta';
-        meta.textContent = '4〜6名・8〜12名で作成 / 1〜3名・7名はエラー';
+        meta.textContent = 'コート数・コート名を設定 / 1〜3名・7名はエラー';
         titleWrap.append(title, meta);
 
         const actions = document.createElement('div');
@@ -865,6 +980,8 @@
         actions.appendChild(makeOneBtn);
 
         head.append(titleWrap, actions);
+
+        const config = createGroupConfig(groupName);
 
         const list = document.createElement('div');
         list.className = 'name-list';
@@ -885,6 +1002,7 @@
           input.value = state.groups[groupName][i] || '';
           input.dataset.group = groupName;
           input.dataset.index = String(i);
+          input.dataset.member = 'true';
           input.addEventListener('input', persistCurrentInputs);
           input.addEventListener('change', persistCurrentInputs);
           input.addEventListener('blur', persistCurrentInputs);
@@ -906,8 +1024,79 @@
           list.appendChild(row);
         }
 
-        card.append(head, list);
+        card.append(head, config, list);
         els.groupGrid.appendChild(card);
+      }
+    }
+
+    function createGroupConfig(groupName) {
+      const current = getGroupSetting(groupName);
+      const config = document.createElement('div');
+      config.className = 'group-config';
+
+      const countRow = document.createElement('div');
+      countRow.className = 'court-count-row';
+
+      const label = document.createElement('label');
+      label.textContent = '使用コート数';
+      label.htmlFor = `${groupName}-court-count`;
+
+      const courtCountInput = document.createElement('input');
+      courtCountInput.id = `${groupName}-court-count`;
+      courtCountInput.type = 'number';
+      courtCountInput.inputMode = 'numeric';
+      courtCountInput.min = '1';
+      courtCountInput.max = String(MAX_COURTS_PER_GROUP);
+      courtCountInput.value = String(current.courtCount);
+      courtCountInput.dataset.group = groupName;
+      courtCountInput.dataset.courtCount = 'true';
+
+      courtCountInput.addEventListener('change', () => {
+        const next = normalizeCourtCount(courtCountInput.value);
+        courtCountInput.value = String(next);
+        state.settings.groupSettings[groupName].courtCount = next;
+        saveSettings(state.settings);
+        renderCourtNameInputs(config, groupName);
+        showStatus(`${groupName}のコート数を保存しました。`, 'ok', 1600);
+      });
+
+      countRow.append(label, courtCountInput);
+
+      const nameGrid = document.createElement('div');
+      nameGrid.className = 'court-name-grid';
+      config.append(countRow, nameGrid);
+
+      renderCourtNameInputs(config, groupName);
+      return config;
+    }
+
+    function renderCourtNameInputs(config, groupName) {
+      const nameGrid = config.querySelector('.court-name-grid');
+      if (!nameGrid) return;
+
+      const setting = getGroupSetting(groupName);
+      nameGrid.innerHTML = '';
+
+      for (let i = 0; i < setting.courtCount; i++) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'court-name-input';
+        input.placeholder = `コート${i + 1}名`;
+        input.value = setting.courtNames[i] || `Court ${i + 1}`;
+        input.dataset.group = groupName;
+        input.dataset.courtNameIndex = String(i);
+
+        input.addEventListener('input', () => {
+          state.settings.groupSettings[groupName].courtNames[i] = input.value.trim() || `Court ${i + 1}`;
+          saveSettings(state.settings);
+        });
+        input.addEventListener('change', () => {
+          state.settings.groupSettings[groupName].courtNames[i] = input.value.trim() || `Court ${i + 1}`;
+          input.value = state.settings.groupSettings[groupName].courtNames[i];
+          saveSettings(state.settings);
+        });
+
+        nameGrid.appendChild(input);
       }
     }
 
@@ -926,7 +1115,7 @@
 
     function readInputsToState() {
       const next = emptyGroups();
-      const inputs = els.groupGrid.querySelectorAll('input[type="text"]');
+      const inputs = els.groupGrid.querySelectorAll('input[data-member="true"]');
       inputs.forEach(input => {
         const groupName = input.dataset.group;
         const value = input.value.trim();
@@ -947,7 +1136,7 @@
     function generateSelectedGroups(groupNames) {
       persistCurrentInputs();
       const createdAt = new Date();
-      const results = groupNames.map(groupName => makeGroupResult(groupName, state.groups[groupName] || [], state.settings.roundCount));
+      const results = groupNames.map(groupName => makeGroupResult(groupName, state.groups[groupName] || [], state.settings.roundCount, getGroupSetting(groupName)));
 
       if (groupNames.length === GROUP_NAMES.length) {
         renderResults(results, createdAt);
@@ -978,23 +1167,28 @@
         total: 0,
         roundCount: state.settings.roundCount,
         courtCount: 0,
+        courtNames: getGroupSetting(groupName).courtNames,
         restPerRound: 0,
         rounds: [],
         error: ''
       };
     }
 
-    function makeGroupResult(groupName, members, roundCount) {
+    function makeGroupResult(groupName, members, roundCount, groupSetting) {
       const players = members.map(v => String(v ?? '').trim()).filter(Boolean).slice(0, MAX_MEMBERS);
       const total = players.length;
       const cleanRoundCount = normalizeRoundCount(roundCount);
+      const setting = groupSetting || getGroupSetting(groupName);
+      const requestedCourtCount = normalizeCourtCount(setting.courtCount);
+      const courtNames = setting.courtNames.slice(0, requestedCourtCount).map((name, index) => String(name || `Court ${index + 1}`).trim() || `Court ${index + 1}`);
 
       if (total === 0) {
         return {
           groupName,
           total,
           roundCount: cleanRoundCount,
-          courtCount: 0,
+          courtCount: requestedCourtCount,
+          courtNames,
           restPerRound: 0,
           rounds: [],
           error: ''
@@ -1006,7 +1200,8 @@
           groupName,
           total,
           roundCount: cleanRoundCount,
-          courtCount: 0,
+          courtCount: requestedCourtCount,
+          courtNames,
           restPerRound: 0,
           rounds: [],
           error: '4名以上で構成して下さい。'
@@ -1018,33 +1213,48 @@
           groupName,
           total,
           roundCount: cleanRoundCount,
-          courtCount: 0,
+          courtCount: requestedCourtCount,
+          courtNames,
           restPerRound: 0,
           rounds: [],
-          error: '7名では対戦表を作成できません。4〜6名、または8〜12名で構成して下さい。'
+          error: '7名では対戦表を作成できません。4〜6名、または8名以上で構成して下さい。'
         };
       }
 
-      const schedule = generateSchedule(players, cleanRoundCount);
+      const requiredPlayers = requestedCourtCount * 4;
+      if (total < requiredPlayers) {
+        return {
+          groupName,
+          total,
+          roundCount: cleanRoundCount,
+          courtCount: requestedCourtCount,
+          courtNames,
+          restPerRound: 0,
+          rounds: [],
+          error: `${requestedCourtCount}コートには最低${requiredPlayers}名必要です。現在${total}名です。`
+        };
+      }
+
+      const schedule = generateSchedule(players, cleanRoundCount, requestedCourtCount, courtNames);
       return {
         groupName,
         total,
         roundCount: cleanRoundCount,
         courtCount: schedule.courtCount,
+        courtNames,
         restPerRound: schedule.restPerRound,
         rounds: schedule.rounds,
         error: ''
       };
     }
 
-    function generateSchedule(players, roundCount) {
-      const courtCount = Math.min(MAX_COURTS_PER_GROUP, Math.floor(players.length / 4));
+    function generateSchedule(players, roundCount, courtCount, courtNames) {
       const restPerRound = players.length - (courtCount * 4);
       const rounds = [];
       const stats = createStats(players);
 
       for (let roundIndex = 0; roundIndex < roundCount; roundIndex++) {
-        const candidate = chooseBestRoundCandidate(players, stats, roundIndex, courtCount, restPerRound);
+        const candidate = chooseBestRoundCandidate(players, stats, roundIndex, courtCount, restPerRound, courtNames);
         applyRoundStats(candidate, stats);
         rounds.push({
           number: roundIndex + 1,
@@ -1075,21 +1285,21 @@
       };
     }
 
-    function chooseBestRoundCandidate(players, stats, roundIndex, courtCount, restPerRound) {
-      const attempts = Math.max(180, players.length * 26);
+    function chooseBestRoundCandidate(players, stats, roundIndex, courtCount, restPerRound, courtNames) {
+      const attempts = Math.max(420, players.length * 58);
       const top = [];
 
       for (let i = 0; i < attempts; i++) {
-        const candidate = buildRoundCandidate(players, stats, courtCount, restPerRound);
+        const candidate = buildRoundCandidate(players, stats, courtCount, restPerRound, courtNames);
         candidate.score = scoreRoundCandidate(candidate, stats, roundIndex);
-        insertTopCandidate(top, candidate, 6);
+        insertTopCandidate(top, candidate, 10);
       }
 
-      const take = top.slice(0, Math.min(3, top.length));
-      return take[secureRandomInt(take.length)] || top[0] || buildRoundCandidate(players, stats, courtCount, restPerRound);
+      const take = top.slice(0, Math.min(4, top.length));
+      return take[secureRandomInt(take.length)] || top[0] || buildRoundCandidate(players, stats, courtCount, restPerRound, courtNames);
     }
 
-    function buildRoundCandidate(players, stats, courtCount, restPerRound) {
+    function buildRoundCandidate(players, stats, courtCount, restPerRound, courtNames) {
       const rest = pickRestPlayers(players, restPerRound, stats);
       const restSet = new Set(rest);
       const active = shuffle(players.filter(player => !restSet.has(player)));
@@ -1097,7 +1307,7 @@
 
       for (let i = 0; i < courtCount; i++) {
         const quartet = active.slice(i * 4, (i + 1) * 4);
-        matches.push(buildMatchFromQuartet(quartet, i + 1, stats));
+        matches.push(buildMatchFromQuartet(quartet, i + 1, stats, courtNames[i] || `Court ${i + 1}`));
       }
 
       return { rest, matches };
@@ -1114,12 +1324,12 @@
       return shuffle(pool).slice(0, restPerRound).sort((a, b) => a.localeCompare(b, 'ja'));
     }
 
-    function buildMatchFromQuartet(quartet, courtNumber, stats) {
+    function buildMatchFromQuartet(quartet, courtNumber, stats, courtName) {
       const pairings = [
         { teamA: [quartet[0], quartet[1]], teamB: [quartet[2], quartet[3]] },
         { teamA: [quartet[0], quartet[2]], teamB: [quartet[1], quartet[3]] },
         { teamA: [quartet[0], quartet[3]], teamB: [quartet[1], quartet[2]] }
-      ].map(match => ({ ...match, court: courtNumber }));
+      ].map(match => ({ ...match, court: courtNumber, courtName }));
 
       const scored = pairings.map(match => ({
         match,
@@ -1173,22 +1383,23 @@
       for (const [p1, p2] of teamPairs) {
         const key = pairKey(p1, p2);
         const count = stats.partnerCounts[key] || 0;
-        score += count * 48 + count * count * 20;
-        if (stats.lastPartner[p1] === p2 || stats.lastPartner[p2] === p1) score += 160;
-        if (stats.prevPartner[p1] === p2 || stats.prevPartner[p2] === p1) score += 42;
+        score += count * 90 + count * count * 42;
+        if (stats.lastPartner[p1] === p2 || stats.lastPartner[p2] === p1) score += 260;
+        if (stats.prevPartner[p1] === p2 || stats.prevPartner[p2] === p1) score += 80;
       }
 
       for (const [p1, p2] of [[a, c], [a, d], [b, c], [b, d]]) {
         const key = pairKey(p1, p2);
         const count = stats.opponentCounts[key] || 0;
-        score += count * 10 + count * count * 5;
-        if ((stats.lastOpponents[p1] || []).includes(p2)) score += 22;
-        if ((stats.prevOpponents[p1] || []).includes(p2)) score += 7;
+        score += count * 34 + count * count * 16;
+        if ((stats.lastOpponents[p1] || []).includes(p2)) score += 70;
+        if ((stats.prevOpponents[p1] || []).includes(p2)) score += 22;
       }
 
-      score += (stats.matchupCounts[matchup] || 0) * 72;
-      if (stats.lastMatchupKeys.has(matchup)) score += 190;
-      if (stats.prevMatchupKeys.has(matchup)) score += 55;
+      const matchupCount = stats.matchupCounts[matchup] || 0;
+      score += matchupCount * 190 + matchupCount * matchupCount * 90;
+      if (stats.lastMatchupKeys.has(matchup)) score += 380;
+      if (stats.prevMatchupKeys.has(matchup)) score += 130;
       return score;
     }
 
@@ -1368,7 +1579,7 @@
 
         const label = document.createElement('div');
         label.className = 'court-label';
-        label.textContent = `Court ${match.court}`;
+        label.textContent = match.courtName || `Court ${match.court}`;
 
         const topTeam = document.createElement('div');
         topTeam.className = 'team-box';
@@ -1399,7 +1610,7 @@
 
     function buildResultText(results, createdAt) {
       const lines = [];
-      lines.push(`GZB ランダム対戦表（${formatDateTime(createdAt)}）`);
+      lines.push(`GZB クラス別 ランダム対戦表（${formatDateTime(createdAt)}）`);
       for (const result of results) {
         lines.push('');
         lines.push(`【${result.groupName}】${result.total}名`);
@@ -1414,7 +1625,7 @@
         result.rounds.forEach(round => {
           lines.push(`第${round.number}試合 / 休憩：${round.rest.length ? round.rest.join('、') : 'なし'}`);
           round.matches.forEach(match => {
-            lines.push(` Court ${match.court}: ${match.teamA.join('・')} VS ${match.teamB.join('・')}`);
+            lines.push(` ${match.courtName || `Court ${match.court}`}: ${match.teamA.join('・')} VS ${match.teamB.join('・')}`);
           });
         });
       }
@@ -1455,7 +1666,10 @@
         app: 'gzb-random-match-table',
         version: 1,
         exportedAt: new Date().toISOString(),
-        settings: { roundCount: state.settings.roundCount },
+        settings: {
+          roundCount: state.settings.roundCount,
+          groupSettings: normalizeGroupSettings(state.settings.groupSettings)
+        },
         groups: normalizeGroups(state.groups)
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -1481,6 +1695,7 @@
           state.groups = normalizeGroups(groups);
           if (parsed.settings && typeof parsed.settings === 'object') {
             state.settings.roundCount = normalizeRoundCount(parsed.settings.roundCount);
+            state.settings.groupSettings = normalizeGroupSettings(parsed.settings.groupSettings);
             els.roundCountInput.value = String(state.settings.roundCount);
             saveSettings(state.settings);
           }
@@ -1504,6 +1719,7 @@
         rest: Array.isArray(round.rest) ? round.rest.map(v => String(v ?? '').trim()).filter(Boolean) : [],
         matches: Array.isArray(round.matches) ? round.matches.map(match => ({
           court: Number.isFinite(Number(match.court)) ? Number(match.court) : 1,
+          courtName: String(match.courtName || `Court ${Number.isFinite(Number(match.court)) ? Number(match.court) : 1}`),
           teamA: Array.isArray(match.teamA) ? match.teamA.map(v => String(v ?? '').trim()).filter(Boolean).slice(0, 2) : [],
           teamB: Array.isArray(match.teamB) ? match.teamB.map(v => String(v ?? '').trim()).filter(Boolean).slice(0, 2) : []
         })).filter(match => match.teamA.length === 2 && match.teamB.length === 2) : []
@@ -1515,6 +1731,7 @@
         roundCount: normalizeRoundCount(result.roundCount),
         courtCount: Number.isFinite(Number(result.courtCount)) ? Number(result.courtCount) : 0,
         restPerRound: Number.isFinite(Number(result.restPerRound)) ? Number(result.restPerRound) : 0,
+        courtNames: Array.isArray(result.courtNames) ? result.courtNames.map(v => String(v ?? '').trim()).filter(Boolean).slice(0, MAX_COURTS_PER_GROUP) : [],
         rounds,
         error: String(result.error || '')
       };
@@ -1675,7 +1892,7 @@
       const grid = document.createElement('div');
       grid.className = 'image-output-grid';
       grid.appendChild(createImageOutputCard(
-        'A / B1 / B2 / C セット画像',
+        'A / B / C / D セット画像',
         fileName,
         url
       ));
@@ -1764,8 +1981,18 @@
     }
 
     async function createScheduleImageBlob(result, createdAt) {
-      const canvas = await renderSvgInfoToCanvas(buildScheduleSvg(result, createdAt), 2);
+      const svgInfo = buildScheduleSvg(result, createdAt);
+      const scale = getScheduleImageScale(svgInfo, 3000, 2000);
+      const canvas = await renderSvgInfoToCanvas(svgInfo, scale);
       return canvasToBlob(canvas);
+    }
+
+    function getScheduleImageScale(svgInfo, maxWidth, maxHeight) {
+      const safeWidth = Math.max(1, Number(svgInfo.width) || 1);
+      const safeHeight = Math.max(1, Number(svgInfo.height) || 1);
+      const widthScale = maxWidth / safeWidth;
+      const heightScale = maxHeight / safeHeight;
+      return Math.max(1, Math.min(widthScale, heightScale));
     }
 
     async function createCombinedScheduleImageBlob(results, createdAt) {
@@ -1849,49 +2076,55 @@
 
     function buildScheduleSvg(result, createdAt) {
       const cols = 3;
-      const gap = 22;
-      const outerPad = 24;
-      const cardWidth = 360;
-      const courtBlockHeight = 210;
-      const cardTopHeight = 86;
-      const cardHeight = cardTopHeight + (result.courtCount * courtBlockHeight) + 12;
+      const gap = 24;
+      const outerPad = 28;
+      const cardWidth = 472;
+      const courtBlockHeight = 182;
+      const cardTopHeight = 78;
+      const cardHeight = cardTopHeight + (result.courtCount * courtBlockHeight) + 10;
       const rows = Math.ceil(result.rounds.length / cols);
       const width = (outerPad * 2) + (cardWidth * cols) + (gap * (cols - 1));
-      const titleHeight = 78;
+      const titleHeight = 84;
       const height = (outerPad * 2) + titleHeight + (rows * cardHeight) + (Math.max(0, rows - 1) * gap);
       const parts = [];
 
       parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`);
       parts.push('<rect width="100%" height="100%" fill="#f7fbff"/>');
-      parts.push(`<text x="${outerPad}" y="${outerPad + 24}" font-size="28" font-weight="800" fill="#1f3b74">${escapeXml(result.groupName)} 対戦表</text>`);
-      parts.push(`<text x="${outerPad}" y="${outerPad + 54}" font-size="14" fill="#5d6778">${escapeXml(formatResultMeta(result))} / 作成 ${escapeXml(formatDateTime(createdAt))}</text>`);
+      parts.push(`<text x="${outerPad}" y="${outerPad + 26}" font-size="32" font-weight="800" fill="#1f3b74">${escapeXml(result.groupName)} 対戦表</text>`);
+      parts.push(`<text x="${outerPad}" y="${outerPad + 60}" font-size="18" fill="#5d6778">${escapeXml(formatResultMeta(result))} / 作成 ${escapeXml(formatDateTime(createdAt))}</text>`);
 
       result.rounds.forEach((round, index) => {
         const col = index % cols;
         const row = Math.floor(index / cols);
         const x = outerPad + (cardWidth + gap) * col;
         const y = outerPad + titleHeight + (cardHeight + gap) * row;
-        const teamBoxWidth = cardWidth - 64;
-        const teamBoxX = x + 32;
-        const teamBoxHeight = 52;
-        const teamFontSize = 16;
 
-        parts.push(`<rect x="${x}" y="${y}" width="${cardWidth}" height="${cardHeight}" rx="20" fill="#ffffff" stroke="#dbe5f0" stroke-width="2"/>`);
-        parts.push(`<rect x="${x + 18}" y="${y + 12}" width="${cardWidth - 36}" height="34" rx="12" fill="#e9efff"/>`);
-        parts.push(`<text x="${x + (cardWidth / 2)}" y="${y + 35}" font-size="16" font-weight="800" fill="#2f4da8" text-anchor="middle">第${round.number}試合</text>`);
-        parts.push(`<text x="${x + (cardWidth / 2)}" y="${y + 62}" font-size="14" fill="#5d6778" text-anchor="middle">休憩：${escapeXml(round.rest.length ? round.rest.join('、') : 'なし')}</text>`);
+        const panelInset = 18;
+        const panelWidth = cardWidth - (panelInset * 2);
+        const panelHeight = courtBlockHeight - 12;
+        const panelYBase = y + 70;
+        const teamBoxWidth = cardWidth - 72;
+        const teamBoxX = x + 36;
+        const teamBoxHeight = 42;
+        const courtLabelWidth = 150;
+        const courtLabelX = x + ((cardWidth - courtLabelWidth) / 2);
+
+        parts.push(`<rect x="${x}" y="${y}" width="${cardWidth}" height="${cardHeight}" rx="22" fill="#ffffff" stroke="#dbe5f0" stroke-width="2"/>`);
+        parts.push(`<rect x="${x + 20}" y="${y + 12}" width="${cardWidth - 40}" height="34" rx="12" fill="#e9efff"/>`);
+        parts.push(`<text x="${x + (cardWidth / 2)}" y="${y + 35}" font-size="18" font-weight="800" fill="#2f4da8" text-anchor="middle">第${round.number}試合</text>`);
+        parts.push(`<text x="${x + (cardWidth / 2)}" y="${y + 60}" font-size="16" fill="#5d6778" text-anchor="middle">休憩：${escapeXml(round.rest.length ? round.rest.join('、') : 'なし')}</text>`);
 
         round.matches.forEach((match, courtIndex) => {
-          const panelY = y + 78 + (courtIndex * courtBlockHeight);
-          parts.push(`<rect x="${x + 16}" y="${panelY}" width="${cardWidth - 32}" height="${courtBlockHeight - 12}" rx="16" fill="#f6f9ff" stroke="#e4eaf6"/>`);
-          parts.push(`<rect x="${x + 104}" y="${panelY + 12}" width="${cardWidth - 208}" height="28" rx="14" fill="#eaf1ff"/>`);
-          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 31}" font-size="14" font-weight="800" fill="#38529c" text-anchor="middle">Court ${match.court}</text>`);
+          const panelY = panelYBase + (courtIndex * courtBlockHeight);
+          parts.push(`<rect x="${x + panelInset}" y="${panelY}" width="${panelWidth}" height="${panelHeight}" rx="16" fill="#f6f9ff" stroke="#e4eaf6"/>`);
+          parts.push(`<rect x="${courtLabelX}" y="${panelY + 12}" width="${courtLabelWidth}" height="28" rx="14" fill="#eaf1ff"/>`);
+          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 31}" font-size="17" font-weight="800" fill="#38529c" text-anchor="middle">${escapeXml(match.courtName || `Court ${match.court}`)}</text>`);
 
-          parts.push(`<rect x="${teamBoxX}" y="${panelY + 52}" width="${teamBoxWidth}" height="${teamBoxHeight}" rx="12" fill="#ffffff" stroke="#e8edf6"/>`);
-          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 78}" font-size="${teamFontSize}" font-weight="800" fill="#1f2937" text-anchor="middle" dominant-baseline="middle">${escapeXml(match.teamA.join('・'))}</text>`);
-          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 122}" font-size="18" font-weight="900" fill="#5d6778" text-anchor="middle" dominant-baseline="middle">VS</text>`);
-          parts.push(`<rect x="${teamBoxX}" y="${panelY + 138}" width="${teamBoxWidth}" height="${teamBoxHeight}" rx="12" fill="#ffffff" stroke="#e8edf6"/>`);
-          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 164}" font-size="${teamFontSize}" font-weight="800" fill="#1f2937" text-anchor="middle" dominant-baseline="middle">${escapeXml(match.teamB.join('・'))}</text>`);
+          parts.push(`<rect x="${teamBoxX}" y="${panelY + 50}" width="${teamBoxWidth}" height="${teamBoxHeight}" rx="12" fill="#ffffff" stroke="#e8edf6"/>`);
+          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 71}" font-size="21" font-weight="800" fill="#1f2937" text-anchor="middle" dominant-baseline="middle">${escapeXml(match.teamA.join('・'))}</text>`);
+          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 121}" font-size="18" font-weight="900" fill="#5d6778" text-anchor="middle" dominant-baseline="middle">VS</text>`);
+          parts.push(`<rect x="${teamBoxX}" y="${panelY + 130}" width="${teamBoxWidth}" height="${teamBoxHeight}" rx="12" fill="#ffffff" stroke="#e8edf6"/>`);
+          parts.push(`<text x="${x + (cardWidth / 2)}" y="${panelY + 151}" font-size="21" font-weight="800" fill="#1f2937" text-anchor="middle" dominant-baseline="middle">${escapeXml(match.teamB.join('・'))}</text>`);
         });
       });
 
