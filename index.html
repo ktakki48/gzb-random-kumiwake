@@ -609,7 +609,7 @@
       .group-actions .small { min-height: 40px; font-size: 13px; padding: 8px 12px; }
       .group-config { padding: 10px 14px; }
       .court-count-row { font-size: 12px; grid-template-columns: 1fr 72px; }
-      .court-name-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .court-name-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
       .image-output-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .count-text { font-size: 12px; }
       .result-actions button { min-width: 88px; font-size: 14px; }
@@ -714,7 +714,7 @@
     const SETTINGS_STORAGE_KEY = 'gzb-random-match-settings-v1';
     const MAX_MEMBERS = 20;
     const DEFAULT_ROUND_COUNT = 9;
-    const MAX_COURTS_PER_GROUP = 3;
+    const MAX_COURTS_PER_GROUP = 4;
     const GROUP_NAMES = ['Aグループ', 'Bグループ', 'Cグループ', 'Dグループ'];
     const GROUP_ALIASES = {
       'Aグループ': ['Aグループ'],
@@ -880,7 +880,7 @@
       for (const groupName of GROUP_NAMES) {
         settings[groupName] = {
           courtCount: 1,
-          courtNames: ['Court 1', 'Court 2', 'Court 3']
+          courtNames: ['Court 1', 'Court 2', 'Court 3', 'Court 4']
         };
       }
       return settings;
@@ -896,7 +896,7 @@
         const courtNames = Array.isArray(raw.courtNames) ? raw.courtNames : [];
         normalized[groupName] = {
           courtCount,
-          courtNames: [0, 1, 2].map(index => {
+          courtNames: [0, 1, 2, 3].map(index => {
             const value = String(courtNames[index] ?? '').trim();
             return value || `Court ${index + 1}`;
           })
