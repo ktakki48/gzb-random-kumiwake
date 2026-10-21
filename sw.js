@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gzb-random-match-pages-v20';
+const CACHE_NAME = 'gzb-random-match-pages-tournament-v1';
 const ASSETS = [
   './',
   './index.html',

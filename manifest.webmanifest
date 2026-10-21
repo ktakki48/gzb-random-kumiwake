@@ -1,7 +1,7 @@
 {
   "name": "GZB クラス別 ランダム対戦表",
   "short_name": "GZB対戦表",
-  "description": "バドミントンダブルス用に、A/B/C/D各グループごとに最大20名・最大4コートのランダム対戦表を作成するアプリです。",
+  "description": "A/B/C/Dのクラス別ランダム対戦表。最大20名・4コート。通常モードと固定ペア大会モードに対応。",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

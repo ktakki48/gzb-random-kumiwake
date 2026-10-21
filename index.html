@@ -307,6 +307,59 @@
     }
     .group-actions { display: flex; align-items: center; gap: 8px; }
     .group-actions .small { min-height: 34px; font-size: 11px; padding: 6px 8px; }
+    .tournament-config {
+      border-top: 1px solid var(--line);
+      padding: 10px 8px 12px;
+      background: #f5faf7;
+      display: grid;
+      gap: 8px;
+    }
+    .tournament-mode-row {
+      display: grid;
+      grid-template-columns: 1fr minmax(0, 116px);
+      gap: 6px;
+      align-items: center;
+      color: var(--primary-2);
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .tournament-mode-row select, .fixed-pair-picker select {
+      width: 100%;
+      min-width: 0;
+      font: inherit;
+      font-size: 12px;
+      padding: 8px 4px;
+      border: 1px solid #b8d3c7;
+      border-radius: 9px;
+      background: #fff;
+      -webkit-appearance: menulist;
+      appearance: auto;
+      color: #173a30;
+    }
+    .tournament-pairs { display: grid; gap: 8px; }
+    .tournament-label { color: var(--primary-2); font-size: 12px; font-weight: 800; }
+    .tournament-hint { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.4; }
+    .fixed-pair-list { display: grid; gap: 5px; }
+    .fixed-pair-chip {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 5px; background: white; padding: 5px 7px;
+      border: 1px solid #c7dfd1; border-radius: 9px;
+      font-size: 12px; font-weight: 700; color: #134a37;
+    }
+    .fixed-pair-chip span { min-width: 0; overflow-wrap: anywhere; }
+    .fixed-pair-chip button {
+      min-height: 26px; width: 29px; flex: 0 0 29px; border-radius: 6px;
+      padding: 0; background: #fcebea; color: #ac322b; font-size: 17px;
+    }
+    .fixed-pair-chip.invalid { border-color: #c75a51; color: #b3261e; }
+    .fixed-pair-picker { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 5px; }
+    .fixed-pair-picker button { grid-column: 1/-1; min-height: 36px; font-size: 12px; padding: 7px; }
+    .tournament-pairs[hidden] { display: none !important; }
+    @media (min-width: 720px) {
+      .tournament-config { padding: 12px 14px; }
+      .fixed-pair-picker { grid-template-columns: minmax(0,1fr) minmax(0,1fr) auto; }
+      .fixed-pair-picker button { grid-column: auto; width: auto; }
+    }
     .group-config {
       padding: 8px;
       border-bottom: 1px solid var(--line);
@@ -648,7 +701,7 @@
 
   <main>
     <section class="panel action-panel" aria-label="操作">
-      <p class="notice"><strong>使い方</strong><span>名簿を編集 → 「全対戦表作成」。各グループで使用コート数とコート名を設定し、対戦表を作成します。<br>1〜3名と7名は人数エラーです。余りの人は各試合で「休憩」と表示します。</span></p>
+      <p class="notice"><strong>使い方</strong><span>名簿を編集 → モード・コート・固定ペア（大会時）を設定 → 「全対戦表作成」。<br>1〜3名と7名は人数エラーです。余りの人は各試合で「休憩」と表示します。</span></p>
 
       <div class="setting-grid">
         <div class="setting-box">
@@ -697,7 +750,8 @@
       <ul class="help-list">
         <li>各グループは最大20名まで登録できます。</li>
         <li>指定コート数に対して必要人数を満たす場合に対戦表を作成し、1〜3名と7名はエラー表示にします。</li>
-        <li>各グループごとに1〜3コートを指定でき、余り人数は毎試合「休憩」として自動で割り振ります。</li>
+        <li>各グループごとに最大4コートまで選択し、余り人数を休憩に割り振ります。</li>
+        <li>大会モードは名簿から固定ペアを登録します。両者出場なら固定、片方休憩なら出場者はフリーとして組み合わせます。</li>
         <li>同じペアや似た対戦が連続しにくいよう、偏りを抑えるロジックで作成します。</li>
         <li>上部の「結果の画像出力」からA・B・C・Dを1枚にまとめたセット画像を共有できます。各グループ結果カードの「画像出力」から個別共有もできます。共有シート非対応環境では保存用表示に切り替わります。</li>
         <li>名簿は入力中に即時自動保存されます。名簿と前回作成した対戦表はlocalStorageを使用し、同じ端末・同じブラウザ・同じURLで保持されます。</li>
@@ -779,7 +833,9 @@
         const ok = window.confirm('全グループの名簿を空にします。');
         if (!ok) return;
         state.groups = emptyGroups();
+        for (const name of GROUP_NAMES) state.settings.groupSettings[name].fixedPairs = [];
         saveGroups(state.groups);
+        saveSettings(state.settings);
         renderGroups();
         clearResult();
         showStatus('全グループの名簿をクリアしました。', 'ok');
@@ -880,7 +936,9 @@
       for (const groupName of GROUP_NAMES) {
         settings[groupName] = {
           courtCount: 1,
-          courtNames: ['Court 1', 'Court 2', 'Court 3', 'Court 4']
+          courtNames: ['Court 1', 'Court 2', 'Court 3', 'Court 4'],
+          mode: 'normal',
+          fixedPairs: []
         };
       }
       return settings;
@@ -899,11 +957,28 @@
           courtNames: [0, 1, 2, 3].map(index => {
             const value = String(courtNames[index] ?? '').trim();
             return value || `Court ${index + 1}`;
-          })
+          }),
+          mode: raw.mode === 'tournament' ? 'tournament' : 'normal',
+          fixedPairs: normalizeFixedPairs(raw.fixedPairs)
         };
       }
 
       return normalized;
+    }
+
+    function normalizeFixedPairs(source) {
+      if (!Array.isArray(source)) return [];
+      const seen = new Set();
+      const pairs = [];
+      source.forEach(item => {
+        if (!Array.isArray(item) || item.length !== 2) return;
+        const a = String(item[0] ?? '').trim();
+        const b = String(item[1] ?? '').trim();
+        if (!a || !b || a === b || seen.has(a) || seen.has(b) || pairs.length >= 10) return;
+        seen.add(a); seen.add(b);
+        pairs.push([a, b]);
+      });
+      return pairs;
     }
 
     function loadSettings() {
@@ -931,7 +1006,7 @@
 
     function saveSettings(settings) {
       const payload = {
-        version: 2,
+        version: 3,
         savedAt: new Date().toISOString(),
         roundCount: normalizeRoundCount(settings.roundCount),
         groupSettings: normalizeGroupSettings(settings.groupSettings)
@@ -1018,8 +1093,8 @@
           input.dataset.index = String(i);
           input.dataset.member = 'true';
           input.addEventListener('input', persistCurrentInputs);
-          input.addEventListener('change', persistCurrentInputs);
-          input.addEventListener('blur', persistCurrentInputs);
+          input.addEventListener('change', () => { persistCurrentInputs(); refreshTournamentControls(groupName); });
+          input.addEventListener('blur', () => { persistCurrentInputs(); refreshTournamentControls(groupName); });
 
           const clearBtn = document.createElement('button');
           clearBtn.className = 'clear-btn';
@@ -1031,6 +1106,7 @@
             readInputsToState();
             saveGroups(state.groups);
             renderGroupBadgesOnly();
+            refreshTournamentControls(groupName);
             input.focus();
           });
 
@@ -1038,7 +1114,8 @@
           list.appendChild(row);
         }
 
-        card.append(head, config, list);
+        const tournamentConfig = createTournamentConfig(groupName);
+        card.append(head, config, list, tournamentConfig);
         els.groupGrid.appendChild(card);
       }
     }
@@ -1115,6 +1192,132 @@
         });
 
         nameGrid.appendChild(input);
+      }
+    }
+
+    function createTournamentConfig(groupName) {
+      const section = document.createElement('div');
+      section.className = 'tournament-config';
+      section.dataset.tournamentGroup = groupName;
+      const row = document.createElement('div');
+      row.className = 'tournament-mode-row';
+      const label = document.createElement('label');
+      label.textContent = '対戦モード';
+      label.htmlFor = `${groupName}-mode`;
+      const selector = document.createElement('select');
+      selector.id = `${groupName}-mode`;
+      selector.dataset.mode = 'true';
+      for (const [value, text] of [['normal','通常モード'], ['tournament','大会モード']]) {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = text;
+        selector.appendChild(option);
+      }
+      selector.value = getGroupSetting(groupName).mode;
+      selector.addEventListener('change', () => {
+        state.settings.groupSettings[groupName].mode = selector.value;
+        saveSettings(state.settings);
+        refreshTournamentControls(groupName);
+        showStatus(`${groupName}を${selector.value === 'tournament' ? '大会' : '通常'}モードにしました。`, 'ok', 1900);
+      });
+      row.append(label, selector);
+      const pairArea = document.createElement('div');
+      pairArea.className = 'tournament-pairs';
+      section.append(row, pairArea);
+      updateTournamentPairArea(groupName, pairArea);
+      return section;
+    }
+
+    function refreshTournamentControls(groupName) {
+      const card = Array.from(els.groupGrid.querySelectorAll('.group-card')).find(item => item.dataset.group === groupName);
+      const section = card && card.querySelector('.tournament-config');
+      if (!section) return;
+      const modeSelect = section.querySelector('select[data-mode="true"]');
+      if (modeSelect) modeSelect.value = getGroupSetting(groupName).mode;
+      updateTournamentPairArea(groupName, section.querySelector('.tournament-pairs'));
+    }
+
+    function updateTournamentPairArea(groupName, area) {
+      if (!area) return;
+      const setting = getGroupSetting(groupName);
+      area.hidden = setting.mode !== 'tournament';
+      area.innerHTML = '';
+      if (area.hidden) return;
+      const label = document.createElement('div');
+      label.className = 'tournament-label';
+      label.textContent = `固定ペア（${setting.fixedPairs.length}組）`;
+      const hint = document.createElement('p');
+      hint.className = 'tournament-hint';
+      hint.textContent = '両方出場時は必ず固定。片方が休憩なら相方はフリーで組みます。';
+      const list = document.createElement('div');
+      list.className = 'fixed-pair-list';
+      const members = state.groups[groupName] || [];
+      for (const [idx, pair] of setting.fixedPairs.entries()) {
+        const chip = document.createElement('div');
+        chip.className = 'fixed-pair-chip';
+        if (!members.includes(pair[0]) || !members.includes(pair[1])) chip.classList.add('invalid');
+        const text = document.createElement('span');
+        text.textContent = `${pair[0]} ＋ ${pair[1]}` +
+          ((!members.includes(pair[0]) || !members.includes(pair[1])) ? '（名簿を確認）' : '');
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.textContent = '×';
+        remove.title = '固定ペアを解除';
+        remove.addEventListener('click', () => {
+          state.settings.groupSettings[groupName].fixedPairs.splice(idx, 1);
+          saveSettings(state.settings);
+          refreshTournamentControls(groupName);
+        });
+        chip.append(text, remove);
+        list.appendChild(chip);
+      }
+      const picker = document.createElement('div');
+      picker.className = 'fixed-pair-picker';
+      const used = new Set(setting.fixedPairs.flat());
+      const available = members.filter(name => !used.has(name));
+      const selects = [0,1].map(i => {
+        const select = document.createElement('select');
+        select.setAttribute('aria-label', `固定ペアの選手${i + 1}`);
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = `選手${i + 1}`;
+        select.appendChild(placeholder);
+        available.forEach(name => {
+          const option = document.createElement('option');
+          option.value = name;
+          option.textContent = name;
+          select.appendChild(option);
+        });
+        return select;
+      });
+      const add = document.createElement('button');
+      add.type = 'button';
+      add.className = 'small';
+      add.textContent = '固定ペア追加';
+      add.disabled = available.length < 2;
+      add.addEventListener('click', () => {
+        const a = selects[0].value, b = selects[1].value;
+        if (!a || !b || a === b) {
+          showStatus('異なる2名を選択してください。', 'error');
+          return;
+        }
+        const existing = state.settings.groupSettings[groupName].fixedPairs;
+        if (existing.some(pair => pair.includes(a) || pair.includes(b))) {
+          showStatus('同じ選手は複数の固定ペアに登録できません。', 'error');
+          return;
+        }
+        existing.push([a, b]);
+        saveSettings(state.settings);
+        refreshTournamentControls(groupName);
+        showStatus(`${groupName}の固定ペアを登録しました。`, 'ok');
+      });
+      picker.append(...selects, add);
+      area.append(label, hint, list, picker);
+      if (!members.length) {
+        const noMember = document.createElement('p');
+        noMember.className = 'tournament-hint';
+        noMember.textContent = 'まず名簿に選手名を登録してください。';
+        area.appendChild(noMember);
       }
     }
 
@@ -1199,6 +1402,10 @@
       const setting = groupSetting || getGroupSetting(groupName);
       const requestedCourtCount = normalizeCourtCount(setting.courtCount);
       const courtNames = setting.courtNames.slice(0, requestedCourtCount).map((name, index) => String(name || `Court ${index + 1}`).trim() || `Court ${index + 1}`);
+      const mode = setting.mode === 'tournament' ? 'tournament' : 'normal';
+      const fixedPairs = normalizeFixedPairs(setting.fixedPairs);
+      const makeError = message => ({ groupName, total, roundCount: cleanRoundCount, courtCount: requestedCourtCount,
+        courtNames, mode, fixedPairs, restPerRound: 0, rounds: [], error: message });
 
       if (total === 0) {
         return {
@@ -1253,9 +1460,19 @@
         };
       }
 
-      const schedule = generateSchedule(players, cleanRoundCount, requestedCourtCount, courtNames);
+      if (mode === 'tournament') {
+        if (new Set(players).size !== players.length) return makeError('大会モードでは同じ名前を重複登録できません。');
+        if (fixedPairs.some(pair => !players.includes(pair[0]) || !players.includes(pair[1]))) {
+          return makeError('固定ペアに名簿にいない選手が含まれています。固定ペア設定を確認してください。');
+        }
+      }
+      const schedule = mode === 'tournament'
+        ? generateTournamentSchedule(players, cleanRoundCount, requestedCourtCount, courtNames, fixedPairs)
+        : generateSchedule(players, cleanRoundCount, requestedCourtCount, courtNames);
       return {
         groupName,
+        mode,
+        fixedPairs,
         total,
         roundCount: cleanRoundCount,
         courtCount: schedule.courtCount,
@@ -1282,6 +1499,93 @@
       }
 
       return { courtCount, restPerRound, rounds };
+    }
+
+    // Tournament mode: active members of a registered pair MUST team together;
+    // if only one partner plays, that member can team with any other free player.
+    // Rest decisions are individual, never artificially linked to the fixed pair.
+    function generateTournamentSchedule(players, roundCount, courtCount, courtNames, fixedPairs) {
+      const restPerRound = players.length - courtCount * 4;
+      const rounds = [];
+      const stats = createStats(players);
+      const forcedKeys = new Set(fixedPairs.map(pair => pairKey(pair[0], pair[1])));
+      for (let index = 0; index < roundCount; index++) {
+        const attempts = Math.max(230, players.length * 19);
+        const top = [];
+        for (let attempt = 0; attempt < attempts; attempt++) {
+          const candidate = buildTournamentCandidate(players, stats, courtCount, restPerRound, courtNames, fixedPairs);
+          candidate.score = scoreTournamentCandidate(candidate, stats, forcedKeys);
+          insertTopCandidate(top, candidate, 8);
+        }
+        const take = top.slice(0, Math.min(3, top.length));
+        const chosen = take[secureRandomInt(take.length)] || top[0];
+        applyRoundStats(chosen, stats);
+        rounds.push({ number: index + 1, rest: chosen.rest, matches: chosen.matches });
+      }
+      return { courtCount, restPerRound, rounds };
+    }
+
+    function buildTournamentCandidate(players, stats, courtCount, restPerRound, courtNames, fixedPairs) {
+      const rest = pickRestPlayers(players, restPerRound, stats);
+      const active = new Set(players.filter(player => !rest.includes(player)));
+      const forcedTeams = [];
+      const used = new Set();
+      fixedPairs.forEach(pair => {
+        if (active.has(pair[0]) && active.has(pair[1])) {
+          forcedTeams.push([...pair]);
+          used.add(pair[0]); used.add(pair[1]);
+        }
+      });
+      const free = shuffle([...active].filter(player => !used.has(player)));
+      // Try different free pairings; outer candidate search selects best overall.
+      const allTeams = [...forcedTeams];
+      while (free.length >= 2) {
+        const a = free.pop();
+        const options = free.map((b, index) => ({
+          index, b,
+          score: (stats.partnerCounts[pairKey(a,b)] || 0) * 80 +
+            (stats.lastPartner[a] === b ? 140 : 0) + Math.random() * 85
+        }));
+        options.sort((x,y) => x.score-y.score);
+        const pick = options[secureRandomInt(Math.min(2, options.length))];
+        free.splice(pick.index, 1);
+        allTeams.push([a, pick.b]);
+      }
+      const teams = shuffle(allTeams);
+      const matches = [];
+      for (let i=0; i<courtCount; i++) {
+        matches.push({ court:i+1, courtName: courtNames[i] || `Court ${i+1}`,
+          teamA: teams[2*i], teamB: teams[2*i+1] });
+      }
+      return { rest, matches };
+    }
+
+    function scoreTournamentCandidate(candidate, stats, forcedKeys) {
+      let score = 0;
+      for (const player of candidate.rest) {
+        const count = stats.restCounts[player] || 0;
+        score += count * 85 + count * count * 50;
+        if (stats.lastRest.has(player)) score += 250;
+        if (stats.prevRest.has(player)) score += 70;
+      }
+      candidate.matches.forEach(match => {
+        const teamKeys = [pairKey(...match.teamA), pairKey(...match.teamB)];
+        const [a,b] = match.teamA, [c,d] = match.teamB;
+        teamKeys.forEach(key => {
+          const count = stats.partnerCounts[key] || 0;
+          if (forcedKeys.has(key)) score += count * 3;
+          else score += count * 85 + count * count * 40;
+        });
+        for (const [p1,p2] of [[a,c],[a,d],[b,c],[b,d]]) {
+          const count = stats.opponentCounts[pairKey(p1,p2)] || 0;
+          score += count * 40 + count * count * 14;
+          if ((stats.lastOpponents[p1] || []).includes(p2)) score += 85;
+        }
+        const count = stats.matchupCounts[matchupKey(match)] || 0;
+        score += count * 240 + count * count * 110;
+        if (stats.lastMatchupKeys.has(matchupKey(match))) score += 400;
+      });
+      return score;
     }
 
     function createStats(players) {
@@ -1621,9 +1925,9 @@
     function formatResultMeta(result) {
       if (result.error) return `${result.total}名 / 人数エラー`;
       if (result.total === 0) return '未作成';
-      const courtLabel = result.courtCount === MAX_COURTS_PER_GROUP ? `${result.courtCount}コート` : `${result.courtCount}コート`;
+      const courtLabel = `${result.courtCount}コート`;
       const restLabel = result.restPerRound > 0 ? ` / 毎試合${result.restPerRound}名休憩` : '';
-      return `${result.total}名 / ${result.roundCount}試合 / ${courtLabel}${restLabel}`;
+      return `${result.total}名 / ${result.roundCount}試合 / ${courtLabel}${restLabel}${result.mode === 'tournament' ? ' / 大会' : ''}`;
     }
 
     function buildResultText(results, createdAt) {
@@ -1631,7 +1935,7 @@
       lines.push(`GZB クラス別 ランダム対戦表（${formatDateTime(createdAt)}）`);
       for (const result of results) {
         lines.push('');
-        lines.push(`【${result.groupName}】${result.total}名`);
+        lines.push(`【${result.groupName}】${result.total}名${result.mode === 'tournament' ? '（大会モード）' : ''}`);
         if (result.error) {
           lines.push(`エラー：${result.error}`);
           continue;
@@ -1682,7 +1986,7 @@
       saveSettings(state.settings);
       const payload = {
         app: 'gzb-random-match-table',
-        version: 1,
+        version: 3,
         exportedAt: new Date().toISOString(),
         settings: {
           roundCount: state.settings.roundCount,
@@ -1747,6 +2051,8 @@
         groupName: result.groupName,
         total: Number.isFinite(Number(result.total)) ? Number(result.total) : 0,
         roundCount: normalizeRoundCount(result.roundCount),
+        mode: result.mode === 'tournament' ? 'tournament' : 'normal',
+        fixedPairs: normalizeFixedPairs(result.fixedPairs),
         courtCount: Number.isFinite(Number(result.courtCount)) ? Number(result.courtCount) : 0,
         restPerRound: Number.isFinite(Number(result.restPerRound)) ? Number(result.restPerRound) : 0,
         courtNames: Array.isArray(result.courtNames) ? result.courtNames.map(v => String(v ?? '').trim()).filter(Boolean).slice(0, MAX_COURTS_PER_GROUP) : [],
