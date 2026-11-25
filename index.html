@@ -753,7 +753,7 @@
         <li>各グループごとに最大4コートまで選択し、余り人数を休憩に割り振ります。</li>
         <li>大会モードは名簿から固定ペアを登録します。両者出場なら固定、片方休憩なら出場者はフリーとして組み合わせます。</li>
         <li>同じペアや似た対戦が連続しにくいよう、偏りを抑えるロジックで作成します。</li>
-        <li>上部の「結果の画像出力」からA・B・C・Dを1枚にまとめたセット画像を共有できます。各グループ結果カードの「画像出力」から個別共有もできます。共有シート非対応環境では保存用表示に切り替わります。</li>
+        <li>上部の「結果の画像出力」からA・B・C・Dを1枚にまとめたセット画像を共有できます。各グループ結果カードの「画像出力」から個別共有もできます。Android等で自動共有できない場合は画像プレビューの「画像を共有」「画像を保存」を使用します。</li>
         <li>名簿は入力中に即時自動保存されます。名簿と前回作成した対戦表はlocalStorageを使用し、同じ端末・同じブラウザ・同じURLで保持されます。</li>
       </ul>
     </details>
@@ -811,6 +811,8 @@
       lastResults: [],
       lastCreatedAt: null
     };
+
+    const previewImageUrls = new Set();
 
     els.roundCountInput.value = String(state.settings.roundCount);
     renderGroups();
@@ -1846,14 +1848,15 @@
 
         const actions = document.createElement('div');
         actions.className = 'result-actions';
-        if (!result.error && result.rounds.length > 0) {
-          const imgBtn = document.createElement('button');
-          imgBtn.type = 'button';
-          imgBtn.className = 'secondary small';
-          imgBtn.textContent = '画像出力';
-          imgBtn.addEventListener('click', () => exportResultImage(result, createdAt));
-          actions.appendChild(imgBtn);
-        }
+        const imgBtn = document.createElement('button');
+        imgBtn.type = 'button';
+        imgBtn.className = 'secondary small';
+        imgBtn.textContent = '画像出力';
+        // Show consistently on Android/iOS; unavailable results remain visibly disabled.
+        imgBtn.disabled = Boolean(result.error) || !result.rounds || result.rounds.length === 0;
+        imgBtn.title = imgBtn.disabled ? '有効な対戦表を作成すると画像出力できます' : '画像を作成・共有';
+        imgBtn.addEventListener('click', () => exportResultImage(result, createdAt));
+        actions.appendChild(imgBtn);
 
         head.append(titleWrap, actions);
 
@@ -2018,7 +2021,9 @@
           if (parsed.settings && typeof parsed.settings === 'object') {
             state.settings.roundCount = normalizeRoundCount(parsed.settings.roundCount);
             state.settings.groupSettings = normalizeGroupSettings(parsed.settings.groupSettings);
-            els.roundCountInput.value = String(state.settings.roundCount);
+            const previewImageUrls = new Set();
+
+    els.roundCountInput.value = String(state.settings.roundCount);
             saveSettings(state.settings);
           }
           saveGroups(state.groups);
@@ -2197,111 +2202,103 @@
     }
 
     function presentCombinedImageFallback(blob, fileName) {
-      const url = URL.createObjectURL(blob);
-
-      els.imageOutputArea.hidden = false;
-      els.imageOutputArea.innerHTML = '';
-
-      const head = document.createElement('div');
-      head.className = 'image-output-head';
-
-      const title = document.createElement('h3');
-      title.textContent = 'セット画像出力';
-
-      const note = document.createElement('span');
-      note.textContent = '共有シート非対応のため、保存用画像を表示';
-
-      head.append(title, note);
-
-      const grid = document.createElement('div');
-      grid.className = 'image-output-grid';
-      grid.appendChild(createImageOutputCard(
-        'A / B / C / D セット画像',
-        fileName,
-        url
-      ));
-
-      els.imageOutputArea.append(head, grid);
-      els.imageOutputArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      showImagePreview(blob, fileName, 'A / B / C / D セット画像');
     }
 
     function hideImageOutputArea() {
       if (!els.imageOutputArea) return;
       els.imageOutputArea.hidden = true;
       els.imageOutputArea.innerHTML = '';
+      // Release old preview URLs to prevent memory leaks on mobile browsers.
+      previewImageUrls.forEach(url => URL.revokeObjectURL(url));
+      previewImageUrls.clear();
     }
 
-    function createImageOutputCard(titleText, fileName, url) {
+    // PNG is prepared before the share control appears. Clicking the share button
+    // calls navigator.share synchronously within the new user gesture, which is
+    // important on Android Chrome after async image generation.
+    function showImagePreview(blob, fileName, titleText) {
+      hideImageOutputArea();
+      els.imageOutputArea.hidden = false;
+      const url = URL.createObjectURL(blob);
+      previewImageUrls.add(url);
+
+      const heading = document.createElement('div');
+      heading.className = 'image-output-head';
+      const title = document.createElement('h3');
+      title.textContent = '画像出力・共有';
+      const note = document.createElement('span');
+      note.textContent = '共有できない場合は画像を保存してください';
+      heading.append(title, note);
+      const grid = document.createElement('div');
+      grid.className = 'image-output-grid';
+      grid.appendChild(createImageOutputCard(titleText, fileName, url, blob));
+      els.imageOutputArea.append(heading, grid);
+      els.imageOutputArea.scrollIntoView({ behavior:'smooth', block:'start' });
+    }
+
+    function createImageOutputCard(titleText, fileName, url, blob) {
       const card = document.createElement('div');
       card.className = 'image-output-card';
-
       const title = document.createElement('h4');
       title.textContent = titleText;
-
       const img = document.createElement('img');
       img.src = url;
       img.alt = titleText;
-
+      const share = document.createElement('button');
+      share.type = 'button';
+      share.textContent = '画像を共有';
+      share.style.marginBottom = '8px';
+      const file = new File([blob], fileName, {type:'image/png'});
+      const fileShareSupported = typeof navigator.share === 'function' &&
+        (typeof navigator.canShare !== 'function' || navigator.canShare({files:[file]}));
+      share.hidden = !fileShareSupported;
+      share.addEventListener('click', () => {
+        // Do NOT await before calling share: activation must still be present.
+        navigator.share({title:titleText, files:[file]}).catch(err => {
+          if (err && err.name === 'AbortError') return;
+          showStatus('共有できませんでした。「画像を保存」をお試しください。', 'error', 5000);
+        });
+      });
       const link = document.createElement('a');
       link.href = url;
       link.download = fileName;
       link.textContent = '画像を保存';
-
-      card.append(title, img, link);
+      card.append(title, img, share, link);
       return card;
     }
 
-    async function exportResultImage(result, createdAt, options = {}) {
+    async function exportResultImage(result, createdAt) {
       try {
         const fileName = `${result.groupName}-${dateStamp(createdAt)}.png`;
         const blob = await createScheduleImageBlob(result, createdAt);
         const shared = await tryShareImageBlob(blob, fileName, `${result.groupName} 対戦表`);
-
         if (shared) {
-          if (!options.silent) showStatus(`${result.groupName} の共有シートを開きました。`, 'ok');
+          showStatus('共有シートを開きました。', 'ok');
           return;
         }
-
-        downloadImageBlob(blob, fileName);
-        if (!options.silent) showStatus(`${result.groupName} の対戦表画像を保存しました。`, 'ok');
+        showImagePreview(blob, fileName, `${result.groupName} 対戦表`);
+        showStatus('画像を作成しました。「画像を共有」または「画像を保存」を選んでください。', 'ok', 5000);
       } catch (e) {
-        if (e && e.name === 'AbortError') {
-          if (!options.silent) showStatus('共有をキャンセルしました。', 'ok');
-          return;
-        }
+        if (e && e.name === 'AbortError') return;
         console.warn(e);
-        if (!options.silent) showStatus('画像の作成に失敗しました。', 'error');
+        showStatus('画像作成に失敗しました。ブラウザ・端末の空きメモリもご確認ください。', 'error', 5000);
       }
     }
 
     async function tryShareImageBlob(blob, fileName, title) {
-      if (!navigator.share || typeof File === 'undefined') {
+      if (typeof navigator.share !== 'function' || typeof File === 'undefined') return false;
+      const file = new File([blob], fileName, {type:'image/png'});
+      if (navigator.canShare && !navigator.canShare({files:[file]})) return false;
+      try {
+        await navigator.share({title, files:[file]});
+        return true;
+      } catch (e) {
+        if (e && e.name === 'AbortError') throw e;
+        // e.g. NotAllowedError: transient user activation expired while rendering.
+        console.warn('Native share unavailable; offering explicit share button', e);
         return false;
       }
-
-      const file = new File([blob], fileName, { type: 'image/png' });
-      const shareData = {
-        title,
-        text: title,
-        files: [file]
-      };
-
-      if (navigator.canShare && !navigator.canShare({ files: [file] })) {
-        return false;
-      }
-
-      await navigator.share(shareData);
-      return true;
-    }
-
-    function downloadImageBlob(blob, fileName) {
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.setTimeout(() => URL.revokeObjectURL(link.href), 1200);
     }
 
     async function createScheduleImageBlob(result, createdAt) {
@@ -2311,39 +2308,41 @@
     }
 
     async function createCombinedScheduleImageBlob(results, createdAt) {
-      const scale = 1.6;
-      const gap = Math.round(34 * scale);
-      const canvases = [];
-
-      for (const result of results) {
-        const canvas = await renderSvgInfoToCanvas(buildScheduleSvg(result, createdAt), scale);
-        canvases.push(canvas);
-      }
-
-      const width = Math.max(...canvases.map(canvas => canvas.width));
-      const height = canvases.reduce((sum, canvas) => sum + canvas.height, 0) + gap * Math.max(0, canvases.length - 1);
-
+      const infos = results.map(result => buildScheduleSvg(result, createdAt));
+      const gap = 34;
+      const maxCardWidth = Math.max(...infos.map(info => info.width));
+      const totalStackHeight = infos.reduce((sum, info) => sum + info.height, 0) + gap * (infos.length - 1);
+      // A 2-column collage is safer for large (3–4 court) schedules on Android.
+      const columns = infos.length === 4 && totalStackHeight > 7700 ? 2 : 1;
+      const rowCount = Math.ceil(infos.length / columns);
+      const rowHeights = Array.from({length:rowCount}, (_, row) =>
+        Math.max(...infos.slice(row*columns, (row+1)*columns).map(info => info.height)));
+      const rawWidth = columns * maxCardWidth + (columns - 1) * gap;
+      const rawHeight = rowHeights.reduce((a,b)=>a+b,0) + (rowCount - 1)*gap;
+      const maxPixels = 14000000;
+      const maxSide = 8000;
+      const scale = Math.min(1.5, maxSide/rawWidth, maxSide/rawHeight,
+        Math.sqrt(maxPixels/(rawWidth*rawHeight)));
       const combined = document.createElement('canvas');
-      combined.width = width;
-      combined.height = height;
-
+      combined.width = Math.floor(rawWidth * scale);
+      combined.height = Math.floor(rawHeight * scale);
       const ctx = combined.getContext('2d');
+      if (!ctx) throw new Error('Canvas not supported');
       ctx.fillStyle = '#f7fbff';
-      ctx.fillRect(0, 0, width, height);
-
-      let y = 0;
-      canvases.forEach((canvas, index) => {
-        const x = Math.round((width - canvas.width) / 2);
-        ctx.drawImage(canvas, x, y);
-        y += canvas.height;
-
-        if (index < canvases.length - 1) {
-          ctx.fillStyle = '#f7fbff';
-          ctx.fillRect(0, y, width, gap);
-          y += gap;
+      ctx.fillRect(0, 0, combined.width, combined.height);
+      let yRaw = 0;
+      for (let row=0; row<rowCount; row++) {
+        for (let col=0; col<columns; col++) {
+          const idx = row*columns+col;
+          if (idx>=infos.length) continue;
+          const info = infos[idx];
+          const sub = await renderSvgInfoToCanvas(info, scale);
+          const xRaw = col*(maxCardWidth+gap) + (maxCardWidth - info.width)/2;
+          ctx.drawImage(sub, Math.floor(xRaw*scale), Math.floor(yRaw*scale));
+          sub.width = 0; sub.height = 0;
         }
-      });
-
+        yRaw += rowHeights[row]+gap;
+      }
       return canvasToBlob(combined);
     }
 
